@@ -270,6 +270,10 @@ def command_line_arg():
             default='blue',
             help='the color of the marker')
 
+    par.add_option('-q', '--quiet', 
+            action='store_true', dest='quiet',
+            help='not show the resulting image')
+
     return  par.parse_args( )
 
 ############################################################
@@ -298,8 +302,6 @@ if __name__ == '__main__':
     bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
     saveband_dat(kpath, bands)
 
-    try:
+    if not opts.quiet:
         from subprocess import call
         call(['feh', '-xdF', opts.bandimage])
-    except:
-        pass
