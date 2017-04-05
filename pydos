@@ -139,6 +139,9 @@ def dosplot(xen, tdos, pdos, opts):
             line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
             if ii == 0: LINES += [line]
 
+    if not opts.pdosLabel:
+        for ii in range(len(opts.pdosAtom)):
+            opts.pdosLabel += ['pdos %d' % ii]
     opts.pdosLabel += ['total']
 
     ax.set_xlabel('Energy [eV]', # fontsize='small',
