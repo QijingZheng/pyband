@@ -1,4 +1,3 @@
-# pyband
 band plot using python matplotlib
 
 Usage: pyband [options] arg1 arg2
