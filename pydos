@@ -1,0 +1,261 @@
+#!/usr/bin/env python
+
+import os
+import re
+import numpy as np
+from optparse import OptionParser
+
+import matplotlib as mpl
+from matplotlib.ticker import AutoMinorLocator
+mpl.use('agg')
+import matplotlib.pyplot as plt
+
+mpl.rcParams['axes.unicode_minus'] = False
+
+############################################################
+__version__ = "1.0"
+############################################################
+
+def WeightFromPro(infile='PROCAR'):
+    """
+    Contribution of selected atoms to the each KS orbital
+    """
+
+    FileContents = [line for line in open(infile) if line.strip()]
+
+    nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
+                            if xx.isdigit()]
+
+    Weights = np.asarray([line.split()[-1] for line in FileContents
+                          if not re.search('[a-zA-Z]', line)], dtype=float)
+
+    kpt_weight = np.asarray([line.split()[-1] for line in FileContents if 'weight' in line], dtype=float)
+    
+    energies = np.asarray([line.split()[-4] for line in FileContents
+                            if 'occ.' in line], dtype=float)
+
+    nspin = Weights.shape[0] / (nkpts * nbands * nions)
+
+    Weights.resize(nspin, nkpts, nbands, nions)
+    kpt_weight.resize(nspin, nkpts)
+    energies.resize(nspin, nkpts, nbands)
+    
+    return energies, kpt_weight, Weights
+
+############################################################
+def gaussian_smearing(x, x0, sigma=0.05):
+    '''
+    Gaussian smearing of a Delta function.
+    '''
+
+    return 1. / (np.sqrt(2*np.pi) * sigma) * np.exp(-(x - x0)**2 / (2*sigma**2))
+
+def generateDos(opts):
+    '''
+    generate dos
+    '''
+
+    ens, kptw, whts = WeightFromPro(opts.procar)
+    nspin, nkpts, nbands, nions = whts.shape
+
+    emin =  ens.min()
+    emax =  ens.max()
+    eran = emax - emin
+    emin = emin - eran * opts.extra
+    emax = emax + eran * opts.extra
+
+    xen = np.linspace(emin, emax, opts.nedos)
+    tDOS = np.zeros((opts.nedos, nspin))
+    pDOS = []
+
+    if len(opts.pdosAtom) != 0:
+        for atoms in opts.pdosAtom:
+            p = np.zeros((opts.nedos, nspin))
+
+            alist = np.array(atoms.split(), dtype=int)
+            nlist = [x for x in alist if not x == -1]
+            cmark, = np.where(alist == -1)
+            for ii in cmark:
+                nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+            nlist = [x - 1 for x in set(nlist)]
+
+            pwhts = np.sum(whts[:,:,:, nlist], axis=-1)
+
+            for ii in range(nspin):
+                if ii == 0:
+                    sign = 1
+                else:
+                    sign = -1
+
+                for jj in range(nkpts):
+                    for kk in range(nbands):
+                        x0 = ens[ii,jj,kk]
+                        t1 = gaussian_smearing(xen, x0, opts.sigma) * kptw[ii,jj]
+
+                        tDOS[:, ii] += t1 * sign
+                        p[:, ii] += t1 * sign * pwhts[ii,jj,kk]
+            pDOS += [p]
+    else:
+        for ii in range(nspin):
+            if ii == 0:
+                sign = 1
+            else:
+                sign = -1
+
+            for jj in range(nkpts):
+                for kk in range(nbands):
+                    x0 = ens[ii,jj,kk]
+                    t1 = gaussian_smearing(xen, x0, opts.sigma) * kptw[ii,jj]
+
+                    tDOS[:, ii] += t1 * sign
+
+    return xen, tDOS, pDOS
+
+############################################################
+def dosplot(xen, tdos, pdos, opts):
+    '''
+    Use matplotlib to plot band structure
+    '''
+
+    width, height = opts.figsize
+    xmin, xmax = opts.xlim
+    dpi = opts.dpi
+
+    fig = plt.figure()
+    fig.set_size_inches(width, height)
+    ax = plt.subplot(111)
+
+    LINES = []
+    nspin = tdos.shape[1]
+
+    xen -= opts.zero
+    for p in pdos:
+        for ii in range(nspin):
+            line, = ax.plot(xen, p[:,ii], lw=opts.linewidth, alpha=0.6)
+            if ii == 0: LINES += [line]
+
+    if opts.showtotal:
+        for ii in range(nspin):
+            line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
+            if ii == 0: LINES += [line]
+
+    opts.pdosLabel += ['total']
+
+    ax.set_xlabel('Energy [eV]', # fontsize='small',
+            labelpad=5)
+    ax.set_ylabel('DOS [arb. unit]', # fontsize='small',
+            labelpad=5)
+    ax.set_xlim(xmin, xmax)
+    if opts.ylim is not None:
+        ymin, ymax = opts.ylim
+        ax.set_ylim(ymin, ymax)
+
+    # ax.set_yticklabels([])
+
+    ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+
+    ax.legend(LINES, opts.pdosLabel, 
+              loc='upper right', 
+              fontsize='small',
+              frameon=True,
+              framealpha=0.6)
+
+    plt.tight_layout(pad=0.20)
+    plt.savefig(opts.dosimage, dpi=opts.dpi)
+
+############################################################
+def command_line_arg():
+    usage = "usage: %prog [options] arg1 arg2"  
+    par = OptionParser(usage=usage, version= __version__)
+
+    par.add_option("-i", '--input', 
+            action='store', type="string", dest='procar',
+            default='PROCAR',
+            help='location of the PROCAR')
+
+    par.add_option("-p", '--pdos', 
+            action='append', type="string", dest='pdosAtom',
+            default=[],
+            help='')
+
+    par.add_option("-l", '--label', 
+            action='append', type="string", dest='pdosLabel',
+            default=[],
+            help='label of the pdos')
+
+    par.add_option('-z', '--zero',
+            action='store', type="float",
+            dest='zero', default=0.0,
+            help='energy reference of the band plot')
+
+    par.add_option('--sigma',
+            action='store', type="float",
+            dest='sigma', default=0.02,
+            help='smearing parameter, default 0.02')
+
+    par.add_option('-n', '--nedos',
+            action='store', type="float",
+            dest='nedos', default=1500,
+            help='number of point in DOS plot')
+
+    par.add_option('-o', '--output',
+            action='store', type="string", dest='dosimage',
+            default='dos.png',
+            help='output image name, "dos.png" by default')
+
+    par.add_option('-s', '--size', nargs=2,
+            action='store', type="float", dest='figsize',
+            default=(4.0, 3.0),
+            help='figure size of the output plot')
+
+    par.add_option('-x', nargs=2,
+            action='store', type="float", dest='xlim',
+            default=(-6, 6),
+            help='x limit of the dos plot')
+
+    par.add_option('-y', nargs=2,
+            action='store', type="float", dest='ylim',
+            default=None,
+            help='energy range of the band plot')
+
+    par.add_option('-e',
+            action='store', type="float", dest='extra',
+            default=0.10,
+            help='extra energy range of the band plot')
+
+    par.add_option('--lw',
+            action='store', type="float", dest='linewidth',
+            default=1.0,
+            help='linewidth of the band plot')
+
+    par.add_option('--dpi', 
+            action='store', type="int", dest='dpi',
+            default=360,
+            help='resolution of the output image')
+
+    par.add_option('--tot', 
+            action='store_true', dest='showtotal',
+            default=True,
+            help='show total dos')
+
+    par.add_option('--notot', 
+            action='store_false', dest='showtotal',
+            help='not show total dos')
+
+    par.add_option('-q', '--quiet', 
+            action='store_true', dest='quiet',
+            help='not show the resulting image')
+
+    return  par.parse_args( )
+
+############################################################
+if __name__ == '__main__':
+    opts, args = command_line_arg()
+
+    xen, tdos, pdos = generateDos(opts)
+    dosplot(xen, tdos, pdos, opts)
+
+    if not opts.quiet:
+        from subprocess import call
+        call(['feh', '-xdF', opts.dosimage])
