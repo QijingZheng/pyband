@@ -217,7 +217,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
-    plt.tight_layout()
+    plt.tight_layout(pad=0.20)
     plt.savefig(opts.bandimage, dpi=opts.dpi)
 
 ############################################################
