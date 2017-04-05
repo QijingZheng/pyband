@@ -135,17 +135,65 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     clrs = ['r', 'b']
 
-    for Ispin in range(nspin):
-        for Iband in range(nbands):
-            ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
-                    alpha=0.8,
-                    color=clrs[Ispin])
-            if whts is not None:
-                ax.scatter(kpath, bands[Ispin, :, Iband],
-                        color=opts.occMarkerColor,
-                        s=whts[Ispin,:,Iband] * opts.occMarkerSize,
-                        marker=opts.occMarker, zorder=1, lw=0.0,
-                        alpha=0.5)
+    if opts.occLC and (whts is not None):
+        from matplotlib.collections import LineCollection
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+        LW = opts.occLC_lw
+        DELTA = 0.3
+        EnergyWeight = whts
+        # norm = mpl.colors.Normalize(vmin=EnergyWeight.min(),
+        #                             vmax=EnergyWeight.max())
+        norm = mpl.colors.Normalize(0, 1)
+        # create a ScalarMappable and initialize a data structure
+        s_m = mpl.cm.ScalarMappable(cmap=opts.occLC_cmap, norm=norm)
+        s_m.set_array([EnergyWeight])
+
+        for Ispin in range(nspin):
+            for jj in range(nbands):
+                x = kpath
+                y = bands[Ispin,:,jj]
+                z = EnergyWeight[Ispin,:,jj]
+
+                ax.plot(x, y,
+                        lw=LW + 2 * DELTA,
+                        color='gray', zorder=1)
+
+                points = np.array([x, y]).T.reshape(-1, 1, 2)
+                segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                lc = LineCollection(segments, cmap=opts.occLC_cmap, # alpha=0.7,
+                                    # norm=plt.Normalize(0, 1)
+                                    )
+                lc.set_array((z[1:] + z[:-1]) / 2)
+                lc.set_linewidth(LW)
+                ax.add_collection(lc)
+
+        divider = make_axes_locatable(ax)
+        ax_cbar = divider.append_axes(opts.occLC_cbar_pos.lower(),
+                size=opts.occLC_cbar_size, pad=opts.occLC_cbar_pad)
+
+        if opts.occLC_cbar_pos.lower() == 'top' or opts.occLC_cbar_pos.lower() == 'bottom':
+            ori = 'horizontal'
+        else:
+            ori = 'vertical'
+        cbar = plt.colorbar(s_m, cax=ax_cbar,
+                ticks=[0.0, 1.0],
+                orientation=ori)
+        cbar.ax.set_xticklabels([])
+        cbar.ax.set_yticklabels([])
+
+    else:
+        for Ispin in range(nspin):
+            for Iband in range(nbands):
+                ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
+                        alpha=0.8,
+                        color=clrs[Ispin])
+                if whts is not None:
+                    ax.scatter(kpath, bands[Ispin, :, Iband],
+                            color=opts.occMarkerColor,
+                            s=whts[Ispin,:,Iband] * opts.occMarkerSize,
+                            marker=opts.occMarker, zorder=1, lw=0.0,
+                            alpha=0.5)
 
     for bd in kpt_bounds:
         ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
@@ -253,7 +301,36 @@ def command_line_arg():
     par.add_option('--occ', 
             action='store', type="string", dest='occ',
             default=None,
-            help='show the occ of selected atoms to each KS orbital')
+            help='orbital contribution of each KS state')
+
+    par.add_option('--occL', 
+            action='store_true', dest='occLC',
+            help='use Linecollection or Scatter to show the orbital contribution')
+
+    par.add_option('--occLC_cmap', 
+            action='store', type='string', dest='occLC_cmap',
+            default='jet',
+            help='colormap of the line collection')
+
+    par.add_option('--occLC_lw', 
+            action='store', type='float', dest='occLC_lw',
+            default=2.0,
+            help='linewidth of the line collection')
+
+    par.add_option('--occLC_cbar_pos', 
+            action='store', type='string', dest='occLC_cbar_pos',
+            default='top',
+            help='position of the colorbar')
+
+    par.add_option('--occLC_cbar_size', 
+            action='store', type='string', dest='occLC_cbar_size',
+            default='3%',
+            help='size of the colorbar, relative to the axis')
+
+    par.add_option('--occLC_cbar_pad', 
+            action='store', type='float', dest='occLC_cbar_pad',
+            default=0.02,
+            help='pad between colorbar and axis')
 
     par.add_option('--occM', 
             action='store', type="string", dest='occMarker',
