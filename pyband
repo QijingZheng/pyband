@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+
+import os
+import re
+import numpy as np
+from optparse import OptionParser
+
+############################################################
+__version__ = "1.0"
+############################################################
+
+def WeightFromPro(infile='PROCAR', whichAtom=None):
+    """
+    Contribution of selected atoms to the each KS orbital
+    """
+
+    FileContents = [line for line in open(infile) if line.strip()]
+
+    nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
+                            if xx.isdigit()]
+
+    Weights = np.asarray([line.split()[-1] for line in FileContents
+                          if not re.search('[a-zA-Z]', line)], dtype=float)
+    
+    nspin = Weights.shape[0] / (nkpts * nbands * nions)
+    Weights.resize(nspin, nkpts, nbands, nions)
+    
+    if whichAtom is None:
+        return np.sum(Weights, axis=-1)
+    else:
+        whichAtom = [xx - 1 for xx in whichAtom]
+        return np.sum(Weights[:,:,:,whichAtom], axis=-1)
+
+
+############################################################
+def get_bandInfo(inFile = 'OUTCAR'):
+    """
+    extract band energies from OUTCAR
+    """
+
+    outcar = [line for line in open(inFile) if line.strip()]
+
+    for ii, line in enumerate(outcar):
+        if 'NKPTS =' in line:
+            nkpts = int(line.split()[3])
+            nband = int(line.split()[-1])
+
+        if 'ISPIN  =' in line:
+            ispin = int(line.split()[2])
+
+        if "k-points in reciprocal lattice and weights" in line:
+            Lvkpts = ii + 1
+
+        if 'reciprocal lattice vectors' in line:
+            ibasis = ii + 1
+
+        if 'E-fermi' in line:
+            Efermi = float(line.split()[2])
+            LineEfermi = ii + 1
+            break
+
+    # basis vector of reciprocal lattice
+    B = np.array([line.split()[3:] for line in outcar[ibasis:ibasis+3]], 
+                 dtype=float)
+    # k-points vectors and weights
+    tmp = np.array([line.split() for line in outcar[Lvkpts:Lvkpts+nkpts]],
+                   dtype=float)
+    vkpts = tmp[:,:3]
+    wkpts = tmp[:,-1]
+
+    # for ispin = 2, there are two extra lines "spin component..."
+    N = (nband + 2) * nkpts * ispin + (ispin - 1) * 2
+    bands = []
+    # vkpts = []
+    for line in outcar[LineEfermi:LineEfermi + N]:
+        if 'spin component' in line or 'band No.' in line:
+            continue
+        if 'k-point' in line:
+            # vkpts += [line.split()[3:]]
+            continue
+        bands.append(float(line.split()[1]))
+
+    bands = np.array(bands, dtype=float).reshape((ispin, nkpts, nband))
+
+    if os.path.isfile('KPOINTS'):
+        kp = open('KPOINTS').readlines()
+
+    if os.path.isfile('KPOINTS') and kp[2][0].upper() == 'L':
+        Nk_in_seg = int(kp[1].strip())
+        Nseg = nkpts / Nk_in_seg
+        vkpt_diff = np.zeros_like(vkpts, dtype=float)
+        
+        for ii in range(Nseg):
+            start = ii * Nk_in_seg
+            end = (ii + 1) * Nk_in_seg
+            vkpt_diff[start:end, :] = vkpts[start:end,:] - vkpts[start,:]
+
+        kpt_path = np.linalg.norm(np.dot(vkpt_diff, B), axis=1)
+        # kpt_path = np.sqrt(np.sum(np.dot(vkpt_diff, B)**2, axis=1))
+        for ii in range(1, Nseg):
+            start = ii * Nk_in_seg
+            end = (ii + 1) * Nk_in_seg
+            kpt_path[start:end] += kpt_path[start-1]
+
+        kpt_path /= kpt_path[-1]
+        kpt_bounds =  np.concatenate((kpt_path[0::Nk_in_seg], [1.0,]))
+    else:
+        # get band path
+        vkpt_diff = np.diff(vkpts, axis=0)
+        kpt_path = np.zeros(nkpts, dtype=float)
+        kpt_path[1:] = np.cumsum(np.linalg.norm(np.dot(vkpt_diff, B), axis=1))
+        kpt_path /= kpt_path[-1]
+
+        # get boundaries of band path
+        xx = np.diff(kpt_path)
+        kpt_bounds = np.concatenate(([0.0,], kpt_path[np.isclose(xx, 0.0)], [1.0,]))
+
+    return kpt_path, bands, Efermi, kpt_bounds
+
+############################################################
+def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
+    '''
+    Use matplotlib to plot band structure
+    '''
+
+    width, height = opts.figsize
+    ymin, ymax = opts.ylim
+    dpi = opts.dpi
+
+    fig = plt.figure()
+    fig.set_size_inches(width, height)
+    ax = plt.subplot(111)
+
+    nspin, nkpts, nbands = bands.shape
+
+    clrs = ['r', 'b']
+
+    for Ispin in range(nspin):
+        for Iband in range(nbands):
+            ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
+                    alpha=0.8,
+                    color=clrs[Ispin])
+            if whts is not None:
+                ax.scatter(kpath, bands[Ispin, :, Iband],
+                        color=opts.occMarkerColor,
+                        s=whts[Ispin,:,Iband] * opts.occMarkerSize,
+                        marker=opts.occMarker, zorder=1, lw=0.0,
+                        alpha=0.5)
+
+    for bd in kpt_bounds:
+        ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
+
+    ax.set_ylabel('Energy [eV]', # fontsize='small',
+            labelpad=5)
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlim(0.0, 1.0)
+
+    ax.set_xticks(kpt_bounds)
+    if opts.kpts:
+        kname = [x.upper() for x in opts.kpts]
+        for ii in range(len(kname)):
+            if kname[ii] == 'G':
+                kname[ii] = r'$\mathrm{\mathsf{\Gamma}}$'
+            else:
+                kname[ii] = r'$\mathrm{\mathsf{%s}}$' % kname[ii]
+        ax.set_xticklabels(kname)
+    else:
+        ax.set_xticklabels([])
+
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+
+    plt.tight_layout()
+    plt.savefig(opts.bandimage, dpi=opts.dpi)
+
+############################################################
+def saveband_dat(kpath, bands):
+    '''
+    save band info to txt files
+    '''
+    prefix = 'pyband'
+    spinSuffix = ['up', 'do']
+    nspin, nkpts, nbands = bands.shape
+
+    if nspin == 1:
+        with open(prefix + '.dat', 'w') as out:
+            for ii in range(nkpts):
+                line = '%8.4f ' % kpath[ii]
+                for jj in range(nbands):
+                    line += '%10.4f' % bands[0,ii,jj]
+                line += '\n'
+                out.write(line)
+    else:
+        for Ispin in range(nspin):
+            filename = prefix + '_' + spinSuffix[Ispin] + '.dat'
+            with open(filename, 'w') as out:
+                for ii in range(nkpts):
+                    line = '%10.4f ' % kpath[ii]
+                    for jj in range(nbands):
+                        line += '%8.4f' % bands[0,ii,jj]
+                    line += '\n'
+                    out.write(line)
+
+############################################################
+def command_line_arg():
+    usage = "usage: %prog [options] arg1 arg2"  
+    par = OptionParser(usage=usage, version= __version__)
+
+    par.add_option('-f', '--file',
+            action='store', type="string",
+            dest='filename', default='OUTCAR',
+            help='location of OUTCAR')
+
+    par.add_option('--procar', 
+            action='store', type="string", dest='procar',
+            default='PROCAR',
+            help='location of the PROCAR')
+
+    par.add_option('-z', '--zero',
+            action='store', type="float",
+            dest='efermi', default=None,
+            help='energy reference of the band plot')
+
+    par.add_option('-o', '--output',
+            action='store', type="string", dest='bandimage',
+            default='band.png',
+            help='output image name, "band.png" by default')
+
+    par.add_option('-k', '--kpoints',
+            action='store', type="string", dest='kpts',
+            default=None,
+            help='kpoint path')
+
+    par.add_option('-s', '--size', nargs=2,
+            action='store', type="float", dest='figsize',
+            default=(3.0, 4.0),
+            help='figure size of the output plot')
+
+    par.add_option('-y', nargs=2,
+            action='store', type="float", dest='ylim',
+            default=(-3, 3),
+            help='energy range of the band plot')
+
+    par.add_option('--lw',
+            action='store', type="float", dest='linewidth',
+            default=1.0,
+            help='linewidth of the band plot')
+
+    par.add_option('--dpi', 
+            action='store', type="int", dest='dpi',
+            default=360,
+            help='resolution of the output image')
+
+    par.add_option('--occ', 
+            action='store', type="string", dest='occ',
+            default=None,
+            help='show the occ of selected atoms to each KS orbital')
+
+    par.add_option('--occM', 
+            action='store', type="string", dest='occMarker',
+            default='o',
+            help='the marker used in the plot')
+
+    par.add_option('--occMs', 
+            action='store', type="int", dest='occMarkerSize',
+            default=20,
+            help='the size of the marker')
+
+    par.add_option('--occMc', 
+            action='store', type="string", dest='occMarkerColor',
+            default='blue',
+            help='the color of the marker')
+
+    return  par.parse_args( )
+
+############################################################
+if __name__ == '__main__':
+    opts, args = command_line_arg()
+
+    if opts.occ:
+        occAtom = [int(x) for x in opts.occ.split()]
+        whts = WeightFromPro(opts.procar, whichAtom = occAtom)
+    else:
+        whts = None
+
+    kpath, bands, efermi, kpt_bounds = get_bandInfo(opts.filename)
+    if opts.efermi is None:
+        bands -= efermi
+    else:
+        bands -= opts.efermi
+
+    import matplotlib as mpl
+    from matplotlib.ticker import AutoMinorLocator
+    # Use non-interactive backend in case there is no display
+    mpl.use('agg')
+    import matplotlib.pyplot as plt
+    mpl.rcParams['axes.unicode_minus'] = False
+
+    bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+    saveband_dat(kpath, bands)
+
+    try:
+        from subprocess import call
+        call(['feh', '-xdF', opts.bandimage])
+    except:
+        pass
