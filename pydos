@@ -10,6 +10,9 @@ from matplotlib.ticker import AutoMinorLocator
 mpl.use('agg')
 import matplotlib.pyplot as plt
 
+import matplotlib.colors as mcolors
+from matplotlib.patches import Polygon
+
 mpl.rcParams['axes.unicode_minus'] = False
 
 ############################################################
@@ -42,6 +45,56 @@ def WeightFromPro(infile='PROCAR'):
     
     return energies, kpt_weight, Weights
 
+############################################################
+def gradient_fill(x, y, fill_color=None, ax=None, **kwargs):
+    """
+    Plot a line with a linear alpha gradient filled beneath it.
+
+    Parameters
+    ----------
+    x, y : array-like
+        The data values of the line.
+    fill_color : a matplotlib color specifier (string, tuple) or None
+        The color for the fill. If None, the color of the line will be used.
+    ax : a matplotlib Axes instance
+        The axes to plot on. If None, the current pyplot axes will be used.
+    Additional arguments are passed on to matplotlib's ``plot`` function.
+
+    Returns
+    -------
+    line : a Line2D instance
+        The line plotted.
+    im : an AxesImage instance
+        The transparent gradient clipped to just the area beneath the curve.
+    """
+
+    line, = ax.plot(x, y, **kwargs)
+    if fill_color is None:
+        fill_color = line.get_color()
+
+    # print fill_color
+    zorder = line.get_zorder()
+    alpha = line.get_alpha()
+    alpha = 1.0 if alpha is None else alpha
+
+    z = np.empty((100, 1, 4), dtype=float)
+    rgb = mcolors.colorConverter.to_rgb(fill_color)
+    z[:,:,:3] = rgb
+    z[:,:,-1] = np.linspace(0, alpha, 100)[:,None]
+
+    xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
+    im = ax.imshow(z, aspect='auto', extent=[xmin, xmax, ymin, ymax],
+                   origin='lower', zorder=zorder)
+
+    xy = np.column_stack([x, y])
+    xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
+    clip_path = Polygon(xy, facecolor='none', edgecolor='none', closed=True)
+    ax.add_patch(clip_path)
+    im.set_clip_path(clip_path)
+
+    ax.autoscale(True)
+
+    return line, im
 ############################################################
 def gaussian_smearing(x, x0, sigma=0.05):
     '''
@@ -136,18 +189,29 @@ def dosplot(xen, tdos, pdos, opts):
     xen -= opts.zero
     for p in pdos:
         for ii in range(nspin):
-            line, = ax.plot(xen, p[:,ii], lw=opts.linewidth, alpha=0.6)
+            if opts.fill:
+                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=opts.linewidth)
+                # print line.get_color()
+            else:
+                line, = ax.plot(xen, p[:,ii], lw=opts.linewidth, alpha=0.6)
             if ii == 0: LINES += [line]
 
     if opts.showtotal:
         for ii in range(nspin):
-            line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
+            # line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
+            if opts.fill:
+                line, im = gradient_fill(xen, tdos[:,ii], ax=ax, color='k',
+                        lw=opts.linewidth, zorder=-1)
+            else:
+                line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
             if ii == 0: LINES += [line]
 
-    if not opts.pdosLabel:
-        for ii in range(len(opts.pdosAtom)):
-            opts.pdosLabel += ['pdos %d' % ii]
-    opts.pdosLabel += ['total']
+    plabels = []
+    if opts.pdosAtom:
+        plabels = ['p_%d' % ii for ii in range(len(opts.pdosAtom))]
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosLabel))):
+            plabels[ii] = opts.pdosLabel[ii]
+    plabels += ['total']
 
     ax.set_xlabel('Energy [eV]', # fontsize='small',
             labelpad=5)
@@ -163,7 +227,7 @@ def dosplot(xen, tdos, pdos, opts):
     ax.xaxis.set_minor_locator(AutoMinorLocator(2))
     ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
-    ax.legend(LINES, opts.pdosLabel, 
+    ax.legend(LINES, plabels,
               loc='upper right', 
               fontsize='small',
               frameon=True,
@@ -239,8 +303,17 @@ def command_line_arg():
 
     par.add_option('--lw',
             action='store', type="float", dest='linewidth',
-            default=1.0,
+            default=0.5,
             help='linewidth of the band plot')
+
+    par.add_option('--fill',
+            action='store_true', dest='fill',
+            default=True,
+            help='fill under the DOS')
+
+    par.add_option('--nofill',
+            action='store_false', dest='fill',
+            help='no fill under the DOS')
 
     par.add_option('--dpi', 
             action='store', type="int", dest='dpi',
