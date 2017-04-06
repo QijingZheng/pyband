@@ -69,6 +69,11 @@ def generateDos(opts):
     pDOS = []
 
     if len(opts.pdosAtom) != 0:
+
+        factor = np.ones(len(opts.pdosAtom))
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosFactor))):
+            factor[ii] = opts.pdosFactor[ii]
+
         for atoms in opts.pdosAtom:
             p = np.zeros((opts.nedos, nspin))
 
@@ -94,7 +99,7 @@ def generateDos(opts):
 
                         tDOS[:, ii] += t1 * sign
                         p[:, ii] += t1 * sign * pwhts[ii,jj,kk]
-            pDOS += [p]
+            pDOS += [p * factor[ii]]
     else:
         for ii in range(nspin):
             if ii == 0:
@@ -186,6 +191,11 @@ def command_line_arg():
             action='append', type="string", dest='pdosLabel',
             default=[],
             help='label of the pdos')
+
+    par.add_option('--fac', 
+            action='append', type="float", dest='pdosFactor',
+            default=[],
+            help='scale factor of the pdos')
 
     par.add_option('-z', '--zero',
             action='store', type="float",
