@@ -186,32 +186,37 @@ def dosplot(xen, tdos, pdos, opts):
     LINES = []
     nspin = tdos.shape[1]
 
+    plabels = []
+    LWs = []
+    # LCs = []
+    if opts.pdosAtom:
+        plabels = ['p_%d' % ii for ii in range(len(opts.pdosAtom))]
+        LWs = [0.5 for ii in range(len(opts.pdosAtom))]
+
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosLabel))):
+            plabels[ii] = opts.pdosLabel[ii]
+        for ii in range(min(len(opts.pdosAtom), len(opts.linewidth))):
+            LWs[ii] = opts.linewidth[ii]
+
+    plabels += ['total']
+
     xen -= opts.zero
     for p in pdos:
         for ii in range(nspin):
             if opts.fill:
-                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=opts.linewidth)
-                # print line.get_color()
+                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ii])
             else:
-                line, = ax.plot(xen, p[:,ii], lw=opts.linewidth, alpha=0.6)
+                line, = ax.plot(xen, p[:,ii], lw=LWs[ii], alpha=0.6)
             if ii == 0: LINES += [line]
 
     if opts.showtotal:
         for ii in range(nspin):
-            # line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
             if opts.fill:
                 line, im = gradient_fill(xen, tdos[:,ii], ax=ax, color='k',
-                        lw=opts.linewidth, zorder=-1)
+                        lw=0.5, zorder=-1)
             else:
-                line, = ax.plot(xen, tdos[:,ii], color='k', lw=opts.linewidth, alpha=0.6)
+                line, = ax.plot(xen, tdos[:,ii], color='k', lw=0.5, alpha=0.6)
             if ii == 0: LINES += [line]
-
-    plabels = []
-    if opts.pdosAtom:
-        plabels = ['p_%d' % ii for ii in range(len(opts.pdosAtom))]
-        for ii in range(min(len(opts.pdosAtom), len(opts.pdosLabel))):
-            plabels[ii] = opts.pdosLabel[ii]
-    plabels += ['total']
 
     ax.set_xlabel('Energy [eV]', # fontsize='small',
             labelpad=5)
@@ -302,9 +307,14 @@ def command_line_arg():
             help='extra energy range of the band plot')
 
     par.add_option('--lw',
-            action='store', type="float", dest='linewidth',
-            default=0.5,
+            action='append', type="float", dest='linewidth',
+            default=[],
             help='linewidth of the band plot')
+
+    # par.add_option('--lc',
+    #         action='append', type="float", dest='linecolor',
+    #         default=[],
+    #         help='linecolor of the band plot')
 
     par.add_option('--fill',
             action='store_true', dest='fill',
