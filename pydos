@@ -279,8 +279,8 @@ def command_line_arg():
             help='smearing parameter, default 0.02')
 
     par.add_option('-n', '--nedos',
-            action='store', type="float",
-            dest='nedos', default=1500,
+            action='store', type="int",
+            dest='nedos', default=5000,
             help='number of point in DOS plot')
 
     par.add_option('-o', '--output',
