@@ -236,7 +236,7 @@ def dosplot(xen, tdos, pdos, opts):
     ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
     ax.legend(LINES, plabels,
-              loc='upper right', 
+              loc=opts.legendloc, 
               fontsize='small',
               frameon=True,
               framealpha=0.6)
@@ -263,6 +263,11 @@ def command_line_arg():
             action='append', type="string", dest='pdosLabel',
             default=[],
             help='label of the pdos')
+
+    par.add_option('--lloc', 
+            action='store', type="string", dest='legendloc',
+            default='upper right',
+            help='legend localtion of dos plot')
 
     par.add_option('--fac', 
             action='append', type="float", dest='pdosFactor',
