@@ -290,7 +290,7 @@ def command_line_arg():
 
     par.add_option('-s', '--size', nargs=2,
             action='store', type="float", dest='figsize',
-            default=(4.0, 3.0),
+            default=(4.5, 3.0),
             help='figure size of the output plot')
 
     par.add_option('-x', nargs=2,
