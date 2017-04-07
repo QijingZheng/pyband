@@ -88,7 +88,7 @@ def gradient_fill(x, y, fill_color=None, ax=None, **kwargs):
 
     xy = np.column_stack([x, y])
     xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
-    clip_path = Polygon(xy, facecolor='none', edgecolor='none', closed=True)
+    clip_path = Polygon(xy, lw=0.0, facecolor='none', edgecolor='none', closed=True)
     ax.add_patch(clip_path)
     im.set_clip_path(clip_path)
 
@@ -201,12 +201,12 @@ def dosplot(xen, tdos, pdos, opts):
     plabels += ['total']
 
     xen -= opts.zero
-    for p in pdos:
+    for ip, p in enumerate(pdos):
         for ii in range(nspin):
             if opts.fill:
-                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ii])
+                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ip])
             else:
-                line, = ax.plot(xen, p[:,ii], lw=LWs[ii], alpha=0.6)
+                line, = ax.plot(xen, p[:,ii], lw=LWs[ip], alpha=0.6)
             if ii == 0: LINES += [line]
 
     if opts.showtotal:
@@ -222,6 +222,8 @@ def dosplot(xen, tdos, pdos, opts):
             labelpad=5)
     ax.set_ylabel('DOS [arb. unit]', # fontsize='small',
             labelpad=5)
+    ax.tick_params(which='both', labelsize='small')
+
     ax.set_xlim(xmin, xmax)
     if opts.ylim is not None:
         ymin, ymax = opts.ylim
