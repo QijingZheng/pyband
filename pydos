@@ -140,10 +140,7 @@ def generateDos(opts):
             pwhts = np.sum(whts[:,:,:, nlist], axis=-1)
 
             for ii in range(nspin):
-                if ii == 0:
-                    sign = 1
-                else:
-                    sign = -1
+                sign = 1 if ii == 0 else -1
 
                 for jj in range(nkpts):
                     for kk in range(nbands):
