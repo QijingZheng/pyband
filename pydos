@@ -127,7 +127,7 @@ def generateDos(opts):
         for ii in range(min(len(opts.pdosAtom), len(opts.pdosFactor))):
             factor[ii] = opts.pdosFactor[ii]
 
-        for atoms in opts.pdosAtom:
+        for ia, atoms in enumerate(opts.pdosAtom):
             p = np.zeros((opts.nedos, nspin))
 
             alist = np.array(atoms.split(), dtype=int)
@@ -150,7 +150,8 @@ def generateDos(opts):
                         x0 = ens[ii,jj,kk]
                         t1 = gaussian_smearing(xen, x0, opts.sigma) * kptw[ii,jj]
 
-                        tDOS[:, ii] += t1 * sign
+                        # only calculate total DOS once
+                        if ia == 0: tDOS[:, ii] += t1 * sign
                         p[:, ii] += t1 * sign * pwhts[ii,jj,kk]
             pDOS += [p * factor[ii]]
     else:
@@ -221,7 +222,7 @@ def dosplot(xen, tdos, pdos, opts):
     ax.set_xlabel('Energy [eV]', # fontsize='small',
             labelpad=5)
     ax.set_ylabel('DOS [arb. unit]', # fontsize='small',
-            labelpad=5)
+            labelpad=10)
     ax.tick_params(which='both', labelsize='small')
 
     ax.set_xlim(xmin, xmax)
@@ -290,7 +291,7 @@ def command_line_arg():
 
     par.add_option('-s', '--size', nargs=2,
             action='store', type="float", dest='figsize',
-            default=(4.5, 3.0),
+            default=(4.8, 3.0),
             help='figure size of the output plot')
 
     par.add_option('-x', nargs=2,
