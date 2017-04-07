@@ -153,7 +153,11 @@ def generateDos(opts):
                         # only calculate total DOS once
                         if ia == 0: tDOS[:, ii] += t1 * sign
                         p[:, ii] += t1 * sign * pwhts[ii,jj,kk]
-            pDOS += [p * factor[ii]]
+
+                p[:,ii] = opts.pdosOffset * ia * sign + p[:,ii] * factor[ia]
+                if ia == 0:
+                    tDOS[:,ii] += opts.pdosOffset * len(opts.pdosAtom)
+            pDOS += [p]
     else:
         for ii in range(nspin):
             if ii == 0:
@@ -257,7 +261,12 @@ def command_line_arg():
     par.add_option("-p", '--pdos', 
             action='append', type="string", dest='pdosAtom',
             default=[],
-            help='')
+            help='specify which atoms to plot the pdos')
+
+    par.add_option('--pdosoffset', 
+            action='store', type="float", dest='pdosOffset',
+            default=0.0,
+            help='offset in pdos plot')
 
     par.add_option("-l", '--label', 
             action='append', type="string", dest='pdosLabel',
