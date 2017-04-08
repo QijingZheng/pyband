@@ -307,7 +307,7 @@ def command_line_arg():
 
     par.add_option('-e',
             action='store', type="float", dest='extra',
-            default=0.10,
+            default=0.05,
             help='extra energy range of the band plot')
 
     par.add_option('--lw',
