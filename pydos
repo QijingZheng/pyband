@@ -121,6 +121,15 @@ def generateDos(opts):
     tDOS = np.zeros((opts.nedos, nspin))
     pDOS = []
 
+    tdos_smear = np.zeros((nspin, nkpts, nbands, opts.nedos))
+    for Is in range(nspin):
+        sign = 1 if Is == 0 else -1
+        for Ik in range(nkpts):
+            for Ib in range(nbands):
+                x0 = ens[Is, Ik, Ib]
+                tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[Is, Ik]
+    tDOS = np.sum(tdos_smear, axis=(1, 2)).T
+
     if len(opts.pdosAtom) != 0:
 
         factor = np.ones(len(opts.pdosAtom))
@@ -128,7 +137,7 @@ def generateDos(opts):
             factor[ii] = opts.pdosFactor[ii]
 
         for ia, atoms in enumerate(opts.pdosAtom):
-            p = np.zeros((opts.nedos, nspin))
+            # p = np.zeros((opts.nedos, nspin))
 
             alist = np.array(atoms.split(), dtype=int)
             nlist = [x for x in alist if not x == -1]
@@ -139,35 +148,16 @@ def generateDos(opts):
 
             pwhts = np.sum(whts[:,:,:, nlist], axis=-1)
 
-            for ii in range(nspin):
-                sign = 1 if ii == 0 else -1
+            p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).T
 
-                for jj in range(nkpts):
-                    for kk in range(nbands):
-                        x0 = ens[ii,jj,kk]
-                        t1 = gaussian_smearing(xen, x0, opts.sigma) * kptw[ii,jj]
+            for Is in range(nspin):
+                sign = 1 if Is == 0 else -1
 
-                        # only calculate total DOS once
-                        if ia == 0: tDOS[:, ii] += t1 * sign
-                        p[:, ii] += t1 * sign * pwhts[ii,jj,kk]
-
-                p[:,ii] = opts.pdosOffset * ia * sign + p[:,ii] * factor[ia]
+                p[:,Is] = opts.pdosOffset * ia * sign + p[:,Is] * factor[ia]
                 if ia == 0:
-                    tDOS[:,ii] += opts.pdosOffset * len(opts.pdosAtom)
+                    tDOS[:,Is] += opts.pdosOffset * len(opts.pdosAtom)
+
             pDOS += [p]
-    else:
-        for ii in range(nspin):
-            if ii == 0:
-                sign = 1
-            else:
-                sign = -1
-
-            for jj in range(nkpts):
-                for kk in range(nbands):
-                    x0 = ens[ii,jj,kk]
-                    t1 = gaussian_smearing(xen, x0, opts.sigma) * kptw[ii,jj]
-
-                    tDOS[:, ii] += t1 * sign
 
     return xen, tDOS, pDOS
 
