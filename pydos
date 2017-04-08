@@ -118,10 +118,10 @@ def generateDos(opts):
     emax = emax + eran * opts.extra
 
     xen = np.linspace(emin, emax, opts.nedos)
-    tDOS = np.zeros((opts.nedos, nspin))
+    # tDOS = np.empty((opts.nedos, nspin))
     pDOS = []
 
-    tdos_smear = np.zeros((nspin, nkpts, nbands, opts.nedos))
+    tdos_smear = np.empty((nspin, nkpts, nbands, opts.nedos))
     for Is in range(nspin):
         sign = 1 if Is == 0 else -1
         for Ik in range(nkpts):
