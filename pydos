@@ -171,6 +171,8 @@ def dosplot(xen, tdos, pdos, opts):
     xmin, xmax = opts.xlim
     dpi = opts.dpi
 
+    plt.style.use(opts.mpl_style)
+
     fig = plt.figure()
     fig.set_size_inches(width, height)
     ax = plt.subplot(111)
@@ -204,10 +206,11 @@ def dosplot(xen, tdos, pdos, opts):
     if opts.showtotal:
         for ii in range(nspin):
             if opts.fill:
-                line, im = gradient_fill(xen, tdos[:,ii], ax=ax, color='k',
+                line, im = gradient_fill(xen, tdos[:,ii], ax=ax, # color='k',
                         lw=0.5, zorder=-1)
             else:
-                line, = ax.plot(xen, tdos[:,ii], color='k', lw=0.5, alpha=0.6)
+                line, = ax.plot(xen, tdos[:,ii], # color='k',
+                        lw=0.5, alpha=0.6)
             if ii == 0: LINES += [line]
 
     ax.set_xlabel('Energy [eV]', # fontsize='small',
@@ -343,6 +346,11 @@ def command_line_arg():
             action='store_false', dest='showtotal',
             help='not show total dos')
 
+    par.add_option('--style', 
+            action='store', type='string', dest='mpl_style',
+            default='default',
+            help='plot style of matplotlib. See "plt.style.available" for list of available styles.')
+
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
             help='not show the resulting image')
@@ -354,6 +362,7 @@ if __name__ == '__main__':
     opts, args = command_line_arg()
 
     xen, tdos, pdos = generateDos(opts)
+    # 
     dosplot(xen, tdos, pdos, opts)
 
     if not opts.quiet:
