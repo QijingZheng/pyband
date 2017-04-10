@@ -3,84 +3,84 @@
 import os
 import re
 import numpy as np
-from optparse import optionparser
+from optparse import OptionParser
 
 import matplotlib as mpl
-from matplotlib.ticker import autominorlocator
+from matplotlib.ticker import AutoMinorLocator
 mpl.use('agg')
 import matplotlib.pyplot as plt
 
 import matplotlib.colors as mcolors
-from matplotlib.patches import polygon
+from matplotlib.patches import Polygon
 
-mpl.rcparams['axes.unicode_minus'] = false
+mpl.rcParams['axes.unicode_minus'] = False
 
 ############################################################
 __version__ = "1.0"
 ############################################################
 
-def weightfrompro(infile='procar'):
+def WeightFromPro(infile='PROCAR'):
     """
-    contribution of selected atoms to the each ks orbital
+    Contribution of selected atoms to the each KS orbital
     """
 
-    filecontents = [line for line in open(infile) if line.strip()]
+    FileContents = [line for line in open(infile) if line.strip()]
 
-    nkpts, nbands, nions = [int(xx) for xx in filecontents[1].split()
+    nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
                             if xx.isdigit()]
 
-    weights = np.asarray([line.split()[-1] for line in filecontents
-                          if not re.search('[a-za-z]', line)], dtype=float)
+    Weights = np.asarray([line.split()[-1] for line in FileContents
+                          if not re.search('[a-zA-Z]', line)], dtype=float)
 
-    kpt_weight = np.asarray([line.split()[-1] for line in filecontents if 'weight' in line], dtype=float)
+    kpt_weight = np.asarray([line.split()[-1] for line in FileContents if 'weight' in line], dtype=float)
     
-    energies = np.asarray([line.split()[-4] for line in filecontents
+    energies = np.asarray([line.split()[-4] for line in FileContents
                             if 'occ.' in line], dtype=float)
 
-    nspin = weights.shape[0] / (nkpts * nbands * nions)
+    nspin = Weights.shape[0] / (nkpts * nbands * nions)
 
-    weights.resize(nspin, nkpts, nbands, nions)
+    Weights.resize(nspin, nkpts, nbands, nions)
     kpt_weight.resize(nspin, nkpts)
     energies.resize(nspin, nkpts, nbands)
     
-    return energies, kpt_weight, weights
+    return energies, kpt_weight, Weights
 
 ############################################################
-def gradient_fill(x, y, fill_color=none, ax=none, **kwargs):
+def gradient_fill(x, y, fill_color=None, ax=None, **kwargs):
     """
-    plot a line with a linear alpha gradient filled beneath it.
+    Plot a line with a linear alpha gradient filled beneath it.
 
-    parameters
+    Parameters
     ----------
     x, y : array-like
-        the data values of the line.
-    fill_color : a matplotlib color specifier (string, tuple) or none
-        the color for the fill. if none, the color of the line will be used.
-    ax : a matplotlib axes instance
-        the axes to plot on. if none, the current pyplot axes will be used.
-    additional arguments are passed on to matplotlib's ``plot`` function.
+        The data values of the line.
+    fill_color : a matplotlib color specifier (string, tuple) or None
+        The color for the fill. If None, the color of the line will be used.
+    ax : a matplotlib Axes instance
+        The axes to plot on. If None, the current pyplot axes will be used.
+    Additional arguments are passed on to matplotlib's ``plot`` function.
 
-    returns
+    Returns
     -------
-    line : a line2d instance
-        the line plotted.
-    im : an axesimage instance
-        the transparent gradient clipped to just the area beneath the curve.
+    line : a Line2D instance
+        The line plotted.
+    im : an AxesImage instance
+        The transparent gradient clipped to just the area beneath the curve.
     """
 
     line, = ax.plot(x, y, **kwargs)
-    if fill_color is none:
+    if fill_color is None:
         fill_color = line.get_color()
 
     # print fill_color
     zorder = line.get_zorder()
     alpha = line.get_alpha()
-    alpha = 1.0 if alpha is none else alpha
+    alpha = 1.0 if alpha is None else alpha
 
     z = np.empty((100, 1, 4), dtype=float)
-    rgb = mcolors.colorconverter.to_rgb(fill_color)
+    rgb = mcolors.colorConverter.to_rgb(fill_color)
     z[:,:,:3] = rgb
-    z[:,:,-1] = np.linspace(0, alpha, 100)[:,none]
+    z[:,:,-1] = np.linspace(0, alpha, 100)[:,None]
 
     xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
     im = ax.imshow(z, aspect='auto', extent=[xmin, xmax, ymin, ymax],
@@ -88,17 +88,17 @@ def gradient_fill(x, y, fill_color=none, ax=none, **kwargs):
 
     xy = np.column_stack([x, y])
     xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
-    clip_path = polygon(xy, lw=0.0, facecolor='none', edgecolor='none', closed=true)
+    clip_path = Polygon(xy, lw=0.0, facecolor='none', edgecolor='none', closed=True)
     ax.add_patch(clip_path)
     im.set_clip_path(clip_path)
 
-    ax.autoscale(true)
+    ax.autoscale(True)
 
     return line, im
 ############################################################
 def gaussian_smearing(x, x0, sigma=0.05):
     '''
-    gaussian smearing of a delta function.
+    Gaussian smearing of a Delta function.
     '''
     smear = np.zeros(x.size)
     condition = np.abs(x - x0) < (sigma * 5.) 
@@ -108,17 +108,17 @@ def gaussian_smearing(x, x0, sigma=0.05):
 
 def gaussian_smearing_org(x, x0, sigma=0.05):
     '''
-    gaussian smearing of a delta function.
+    Gaussian smearing of a Delta function.
     '''
 
     return 1. / (np.sqrt(2*np.pi) * sigma) * np.exp(-(x - x0)**2 / (2*sigma**2))
 
-def generatedos(opts):
+def generateDos(opts):
     '''
     generate dos
     '''
 
-    ens, kptw, whts = weightfrompro(opts.procar)
+    ens, kptw, whts = WeightFromPro(opts.procar)
     nspin, nkpts, nbands, nions = whts.shape
 
     emin =  ens.min()
@@ -128,26 +128,26 @@ def generatedos(opts):
     emax = emax + eran * opts.extra
 
     xen = np.linspace(emin, emax, opts.nedos)
-    # tdos = np.empty((opts.nedos, nspin))
-    pdos = []
+    # tDOS = np.empty((opts.nedos, nspin))
+    pDOS = []
 
     tdos_smear = np.empty((nspin, nkpts, nbands, opts.nedos))
-    for is in range(nspin):
-        sign = 1 if is == 0 else -1
-        for ik in range(nkpts):
-            for ib in range(nbands):
-                x0 = ens[is, ik, ib]
-                # tdos_smear[is, ik, ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[is, ik]
-                tdos_smear[is, ik, ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[is, ik]
-    tdos = np.sum(tdos_smear, axis=(1, 2)).t
+    for IS in range(nspin):
+        sign = 1 if IS == 0 else -1
+        for Ik in range(nkpts):
+            for Ib in range(nbands):
+                x0 = ens[IS, Ik, Ib]
+                # tdos_smear[IS, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[IS, Ik]
+                tdos_smear[IS, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[IS, Ik]
+    tDOS = np.sum(tdos_smear, axis=(1, 2)).T
 
-    if len(opts.pdosatom) != 0:
+    if len(opts.pdosAtom) != 0:
 
-        factor = np.ones(len(opts.pdosatom))
-        for ii in range(min(len(opts.pdosatom), len(opts.pdosfactor))):
-            factor[ii] = opts.pdosfactor[ii]
+        factor = np.ones(len(opts.pdosAtom))
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosFactor))):
+            factor[ii] = opts.pdosFactor[ii]
 
-        for ia, atoms in enumerate(opts.pdosatom):
+        for ia, atoms in enumerate(opts.pdosAtom):
             # p = np.zeros((opts.nedos, nspin))
 
             alist = np.array(atoms.split(), dtype=int)
@@ -159,23 +159,23 @@ def generatedos(opts):
 
             pwhts = np.sum(whts[:,:,:, nlist], axis=-1)
 
-            p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).t
+            p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).T
 
-            for is in range(nspin):
-                sign = 1 if is == 0 else -1
+            for IS in range(nspin):
+                sign = 1 if IS == 0 else -1
 
-                p[:,is] = opts.pdosoffset * ia * sign + p[:,is] * factor[ia]
+                p[:,IS] = opts.pdosOffset * ia * sign + p[:,IS] * factor[ia]
                 if ia == 0:
-                    tdos[:,is] += opts.pdosoffset * len(opts.pdosatom)
+                    tDOS[:,IS] += opts.pdosOffset * len(opts.pdosAtom)
 
-            pdos += [p]
+            pDOS += [p]
 
-    return xen, tdos, pdos
+    return xen, tDOS, pDOS
 
 ############################################################
 def dosplot(xen, tdos, pdos, opts):
     '''
-    use matplotlib to plot band structure
+    Use matplotlib to plot band structure
     '''
 
     width, height = opts.figsize
@@ -188,20 +188,20 @@ def dosplot(xen, tdos, pdos, opts):
     fig.set_size_inches(width, height)
     ax = plt.subplot(111)
 
-    lines = []
+    LINES = []
     nspin = tdos.shape[1]
 
     plabels = []
-    lws = []
-    # lcs = []
-    if opts.pdosatom:
-        plabels = ['p_%d' % ii for ii in range(len(opts.pdosatom))]
-        lws = [0.5 for ii in range(len(opts.pdosatom))]
+    LWs = []
+    # LCs = []
+    if opts.pdosAtom:
+        plabels = ['p_%d' % ii for ii in range(len(opts.pdosAtom))]
+        LWs = [0.5 for ii in range(len(opts.pdosAtom))]
 
-        for ii in range(min(len(opts.pdosatom), len(opts.pdoslabel))):
-            plabels[ii] = opts.pdoslabel[ii]
-        for ii in range(min(len(opts.pdosatom), len(opts.linewidth))):
-            lws[ii] = opts.linewidth[ii]
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosLabel))):
+            plabels[ii] = opts.pdosLabel[ii]
+        for ii in range(min(len(opts.pdosAtom), len(opts.linewidth))):
+            LWs[ii] = opts.linewidth[ii]
 
     plabels += ['total']
 
@@ -209,10 +209,10 @@ def dosplot(xen, tdos, pdos, opts):
     for ip, p in enumerate(pdos):
         for ii in range(nspin):
             if opts.fill:
-                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=lws[ip])
+                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ip])
             else:
-                line, = ax.plot(xen, p[:,ii], lw=lws[ip], alpha=0.6)
-            if ii == 0: lines += [line]
+                line, = ax.plot(xen, p[:,ii], lw=LWs[ip], alpha=0.6)
+            if ii == 0: LINES += [line]
 
     if opts.showtotal:
         for ii in range(nspin):
@@ -224,28 +224,28 @@ def dosplot(xen, tdos, pdos, opts):
             else:
                 line, = ax.plot(xen, tdos[:,ii], # color='k',
                         lw=0.5, alpha=0.6)
-            if ii == 0: lines += [line]
+            if ii == 0: LINES += [line]
 
-    ax.set_xlabel('energy [ev]', # fontsize='small',
+    ax.set_xlabel('Energy [eV]', # fontsize='small',
             labelpad=5)
-    ax.set_ylabel('dos [arb. unit]', # fontsize='small',
+    ax.set_ylabel('DOS [arb. unit]', # fontsize='small',
             labelpad=10)
     ax.tick_params(which='both', labelsize='small')
 
     ax.set_xlim(xmin, xmax)
-    if opts.ylim is not none:
+    if opts.ylim is not None:
         ymin, ymax = opts.ylim
         ax.set_ylim(ymin, ymax)
 
     # ax.set_yticklabels([])
 
-    ax.xaxis.set_minor_locator(autominorlocator(2))
-    ax.yaxis.set_minor_locator(autominorlocator(2))
+    ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
-    ax.legend(lines, plabels,
+    ax.legend(LINES, plabels,
               loc=opts.legendloc, 
               fontsize='small',
-              frameon=true,
+              frameon=True,
               framealpha=0.6)
 
     plt.tight_layout(pad=0.20)
@@ -254,25 +254,25 @@ def dosplot(xen, tdos, pdos, opts):
 ############################################################
 def command_line_arg():
     usage = "usage: %prog [options] arg1 arg2"  
-    par = optionparser(usage=usage, version= __version__)
+    par = OptionParser(usage=usage, version= __version__)
 
     par.add_option("-i", '--input', 
             action='store', type="string", dest='procar',
-            default='procar',
-            help='location of the procar')
+            default='PROCAR',
+            help='location of the PROCAR')
 
     par.add_option("-p", '--pdos', 
-            action='append', type="string", dest='pdosatom',
+            action='append', type="string", dest='pdosAtom',
             default=[],
             help='specify which atoms to plot the pdos')
 
     par.add_option('--pdosoffset', 
-            action='store', type="float", dest='pdosoffset',
+            action='store', type="float", dest='pdosOffset',
             default=0.0,
             help='offset in pdos plot')
 
     par.add_option("-l", '--label', 
-            action='append', type="string", dest='pdoslabel',
+            action='append', type="string", dest='pdosLabel',
             default=[],
             help='label of the pdos')
 
@@ -282,7 +282,7 @@ def command_line_arg():
             help='legend location of dos plot')
 
     par.add_option('--fac', 
-            action='append', type="float", dest='pdosfactor',
+            action='append', type="float", dest='pdosFactor',
             default=[],
             help='scale factor of the pdos')
 
@@ -299,7 +299,7 @@ def command_line_arg():
     par.add_option('-n', '--nedos',
             action='store', type="int",
             dest='nedos', default=5000,
-            help='number of point in dos plot')
+            help='number of point in DOS plot')
 
     par.add_option('-o', '--output',
             action='store', type="string", dest='dosimage',
@@ -318,7 +318,7 @@ def command_line_arg():
 
     par.add_option('-y', nargs=2,
             action='store', type="float", dest='ylim',
-            default=none,
+            default=None,
             help='energy range of the band plot')
 
     par.add_option('-e',
@@ -338,12 +338,12 @@ def command_line_arg():
 
     par.add_option('--fill',
             action='store_true', dest='fill',
-            default=true,
-            help='fill under the dos')
+            default=True,
+            help='fill under the DOS')
 
     par.add_option('--nofill',
             action='store_false', dest='fill',
-            help='no fill under the dos')
+            help='no fill under the DOS')
 
     par.add_option('--dpi', 
             action='store', type="int", dest='dpi',
@@ -352,7 +352,7 @@ def command_line_arg():
 
     par.add_option('--tot', 
             action='store_true', dest='showtotal',
-            default=true,
+            default=True,
             help='show total dos')
 
     par.add_option('--notot', 
@@ -362,7 +362,7 @@ def command_line_arg():
     par.add_option('--style', 
             action='store', type='string', dest='mpl_style',
             default='default',
-            help='plot style of matplotlib. see "plt.style.available" for list of available styles.')
+            help='plot style of matplotlib. See "plt.style.available" for list of available styles.')
 
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
@@ -372,10 +372,10 @@ def command_line_arg():
 
 ############################################################
 if __name__ == '__main__':
-    # from time import time
+    from time import time
     opts, args = command_line_arg()
 
-    xen, tdos, pdos = generatedos(opts)
+    xen, tdos, pdos = generateDos(opts)
     # 
     # t0 = time()
     dosplot(xen, tdos, pdos, opts)
@@ -384,4 +384,4 @@ if __name__ == '__main__':
 
     if not opts.quiet:
         from subprocess import call
-        call(['feh', '-xdf', opts.dosimage])
+        call(['feh', '-xdF', opts.dosimage])
