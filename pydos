@@ -207,7 +207,9 @@ def dosplot(xen, tdos, pdos, opts):
         for ii in range(nspin):
             if opts.fill:
                 line, im = gradient_fill(xen, tdos[:,ii], ax=ax, # color='k',
-                        lw=0.5, zorder=-1)
+                        lw=0.5,
+                        # zorder=-1,
+                        )
             else:
                 line, = ax.plot(xen, tdos[:,ii], # color='k',
                         lw=0.5, alpha=0.6)
