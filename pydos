@@ -100,6 +100,16 @@ def gaussian_smearing(x, x0, sigma=0.05):
     '''
     Gaussian smearing of a Delta function.
     '''
+    smear = np.zeros(x.size)
+    condition = np.abs(x - x0) < (sigma * 5.) 
+    smear[condition] = 1. / (np.sqrt(2*np.pi) * sigma) * np.exp(-(x[condition] - x0)**2 / (2*sigma**2))
+
+    return smear
+
+def gaussian_smearing_org(x, x0, sigma=0.05):
+    '''
+    Gaussian smearing of a Delta function.
+    '''
 
     return 1. / (np.sqrt(2*np.pi) * sigma) * np.exp(-(x - x0)**2 / (2*sigma**2))
 
@@ -128,6 +138,7 @@ def generateDos(opts):
             for Ib in range(nbands):
                 x0 = ens[Is, Ik, Ib]
                 tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[Is, Ik]
+                # tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[Is, Ik]
     tDOS = np.sum(tdos_smear, axis=(1, 2)).T
 
     if len(opts.pdosAtom) != 0:
