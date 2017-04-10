@@ -137,8 +137,8 @@ def generateDos(opts):
         for Ik in range(nkpts):
             for Ib in range(nbands):
                 x0 = ens[Is, Ik, Ib]
-                tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[Is, Ik]
-                # tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[Is, Ik]
+                # tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[Is, Ik]
+                tdos_smear[Is, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[Is, Ik]
     tDOS = np.sum(tdos_smear, axis=(1, 2)).T
 
     if len(opts.pdosAtom) != 0:
@@ -372,11 +372,15 @@ def command_line_arg():
 
 ############################################################
 if __name__ == '__main__':
+    from time import time
     opts, args = command_line_arg()
 
     xen, tdos, pdos = generateDos(opts)
     # 
+    t0 = time()
     dosplot(xen, tdos, pdos, opts)
+    t1 = time()
+    print t1 - t0
 
     if not opts.quiet:
         from subprocess import call
