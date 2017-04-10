@@ -375,12 +375,19 @@ if __name__ == '__main__':
     from time import time
     opts, args = command_line_arg()
 
+    t0 = time()
     xen, tdos, pdos = generateDos(opts)
-    # 
-    # t0 = time()
+    t1 = time()
+    print
+    print 'DOS calc completed! Time Used: %.2f [sec]' % (t1 - t0)
+    print
+    
+    t0 = time()
     dosplot(xen, tdos, pdos, opts)
-    # t1 = time()
-    # print t1 - t0
+    t1 = time()
+    print
+    print 'DOS plot completed! Time Used: %.2f [sec]' % (t1 - t0)
+    print
 
     if not opts.quiet:
         from subprocess import call
