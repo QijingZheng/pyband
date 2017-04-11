@@ -46,7 +46,7 @@ def WeightFromPro(infile='PROCAR'):
     return energies, kpt_weight, Weights
 
 ############################################################
-def gradient_fill(x, y, fill_color=None, ax=None, **kwargs):
+def gradient_fill(x, y, fill_color=None, ax=None, direction=1, **kwargs):
     """
     Plot a line with a linear alpha gradient filled beneath it.
 
@@ -80,14 +80,20 @@ def gradient_fill(x, y, fill_color=None, ax=None, **kwargs):
     z = np.empty((100, 1, 4), dtype=float)
     rgb = mcolors.colorConverter.to_rgb(fill_color)
     z[:,:,:3] = rgb
-    z[:,:,-1] = np.linspace(0, alpha, 100)[:,None]
+    if direction == 1:
+        z[:,:,-1] = np.linspace(0, alpha, 100)[:,None]
+    else:
+        z[:,:,-1] = np.linspace(alpha, 0, 100)[:,None]
 
     xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
     im = ax.imshow(z, aspect='auto', extent=[xmin, xmax, ymin, ymax],
                    origin='lower', zorder=zorder)
 
     xy = np.column_stack([x, y])
-    xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
+    if direction == 1:
+        xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
+    else:
+        xy = np.vstack([[xmin, ymax], xy, [xmax, ymax], [xmin, ymax]])
     clip_path = Polygon(xy, lw=0.0, facecolor='none', edgecolor='none', closed=True)
     ax.add_patch(clip_path)
     im.set_clip_path(clip_path)
@@ -208,21 +214,32 @@ def dosplot(xen, tdos, pdos, opts):
     xen -= opts.zero
     for ip, p in enumerate(pdos):
         for ii in range(nspin):
+            fill_direction = 1 if ii == 0 else -1
+            lc = None if ii == 0 else line.get_color()
+
             if opts.fill:
-                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ip])
+                line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ip],
+                        color=lc,
+                        direction=fill_direction)
             else:
-                line, = ax.plot(xen, p[:,ii], lw=LWs[ip], alpha=0.6)
+                line, = ax.plot(xen, p[:,ii], lw=LWs[ip], alpha=0.6,
+                        color=lc)
             if ii == 0: LINES += [line]
 
     if opts.showtotal:
         for ii in range(nspin):
+            fill_direction = 1 if ii == 0 else -1
+            lc = None if ii == 0 else line.get_color()
+
             if opts.fill:
-                line, im = gradient_fill(xen, tdos[:,ii], ax=ax, # color='k',
+                line, im = gradient_fill(xen, tdos[:,ii], ax=ax, 
+                        color=lc,
                         lw=0.5,
                         # zorder=-1,
+                        direction=fill_direction,
                         )
             else:
-                line, = ax.plot(xen, tdos[:,ii], # color='k',
+                line, = ax.plot(xen, tdos[:,ii], color=lc,
                         lw=0.5, alpha=0.6)
             if ii == 0: LINES += [line]
 
