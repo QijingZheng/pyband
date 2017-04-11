@@ -172,7 +172,7 @@ def generateDos(opts):
 
                 p[:,IS] = opts.pdosOffset * ia * sign + p[:,IS] * factor[ia]
                 if ia == 0:
-                    tDOS[:,IS] += opts.pdosOffset * len(opts.pdosAtom)
+                    tDOS[:,IS] += sign * opts.pdosOffset * len(opts.pdosAtom)
 
             pDOS += [p]
 
