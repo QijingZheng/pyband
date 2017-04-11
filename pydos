@@ -189,6 +189,8 @@ def dosplot(xen, tdos, pdos, opts):
     dpi = opts.dpi
 
     plt.style.use(opts.mpl_style)
+    # DO NOT use unicode minus regardless of the style
+    mpl.rcParams['axes.unicode_minus'] = False
 
     fig = plt.figure()
     fig.set_size_inches(width, height)
