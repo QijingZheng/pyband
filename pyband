@@ -57,7 +57,7 @@ def get_bandInfo(inFile = 'OUTCAR'):
         if 'E-fermi' in line:
             Efermi = float(line.split()[2])
             LineEfermi = ii + 1
-            break
+            # break
 
     # basis vector of reciprocal lattice
     B = np.array([line.split()[3:] for line in outcar[ibasis:ibasis+3]], 
