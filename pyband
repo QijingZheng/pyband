@@ -358,7 +358,15 @@ if __name__ == '__main__':
     opts, args = command_line_arg()
 
     if opts.occ:
-        occAtom = [int(x) for x in opts.occ.split()]
+
+        alist = np.array(opts.occ.split(), dtype=int)
+        nlist = [x for x in alist if not x == -1]
+        cmark, = np.where(alist == -1)
+        for ii in cmark:
+            nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+        occAtom = set(nlist)
+
+        # occAtom = [int(x) for x in opts.occ.split()]
         whts = WeightFromPro(opts.procar, whichAtom = occAtom)
     else:
         whts = None
