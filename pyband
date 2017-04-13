@@ -185,9 +185,11 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
     else:
         for Ispin in range(nspin):
             for Iband in range(nbands):
-                ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
-                        alpha=0.8,
-                        color=clrs[Ispin])
+                lc = None if Iband == 0 else line.get_color()
+                line, = ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
+                                alpha=0.8,
+                                color=lc,
+                                )
                 if whts is not None:
                     ax.scatter(kpath, bands[Ispin, :, Iband],
                             color=opts.occMarkerColor,
@@ -344,7 +346,7 @@ def command_line_arg():
 
     par.add_option('--occMc', 
             action='store', type="string", dest='occMarkerColor',
-            default='blue',
+            default=None,
             help='the color of the marker')
 
     par.add_option('-q', '--quiet', 
