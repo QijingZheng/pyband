@@ -147,6 +147,19 @@ def generateDos(opts):
                 tdos_smear[IS, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[IS, Ik]
     tDOS = np.sum(tdos_smear, axis=(1, 2)).T
 
+    # tdos_smear = np.empty((nspin, nkpts, nbands, opts.nedos))
+    # for IS in range(nspin):
+    #     sign = 1 if IS == 0 else -1
+    #     for Ik in range(nkpts):
+    #         tdos_smear[IS, Ik, :] = sign * gaussian_smearing_org(xen[np.newaxis, ...],
+    #                                         ens[IS,Ik,:,np.newaxis], opts.sigma) * kptw[IS, Ik]
+    # tDOS = np.sum(tdos_smear, axis=(1, 2)).T
+
+    # tdos_smear = gaussian_smearing_org(xen[np.newaxis,...], ens[...,np.newaxis],
+    #         opts.sigma) * kptw[..., np.newaxis, np.newaxis]
+    # tDOS = np.sum(tdos_smear, axis=(1, 2)).T
+    # if nspin == 2: tDOS[:,1] *= -1
+
     if len(opts.pdosAtom) != 0:
 
         factor = np.ones(len(opts.pdosAtom))
