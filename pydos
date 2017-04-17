@@ -102,6 +102,12 @@ def gradient_fill(x, y, fill_color=None, ax=None, direction=1, **kwargs):
 
     return line, im
 ############################################################
+def lorentz_smearing(x, x0, sigma=0.03):
+    '''
+    Lorentz smearing of a Delta function.
+    '''
+    return sigma / np.pi / ((x-x0)**2 + sigma**2)
+
 def gaussian_smearing(x, x0, sigma=0.05):
     '''
     Gaussian smearing of a Delta function.
@@ -145,6 +151,7 @@ def generateDos(opts):
                 x0 = ens[IS, Ik, Ib]
                 # tdos_smear[IS, Ik, Ib] = sign * gaussian_smearing(xen, x0, opts.sigma) * kptw[IS, Ik]
                 tdos_smear[IS, Ik, Ib] = sign * gaussian_smearing_org(xen, x0, opts.sigma) * kptw[IS, Ik]
+                # tdos_smear[IS, Ik, Ib] = sign * lorentz_smearing(xen, x0, opts.sigma) * kptw[IS, Ik]
     tDOS = np.sum(tdos_smear, axis=(1, 2)).T
 
     # tdos_smear = np.empty((nspin, nkpts, nbands, opts.nedos))
@@ -190,6 +197,80 @@ def generateDos(opts):
             pDOS += [p]
 
     return xen, tDOS, pDOS
+
+############################################################
+def readDOSFromFile(opts):
+    '''
+    Read DOS info from file.
+
+    the format of the DOS file:
+    first line: ISPIN, NEDOS
+    second line: labels of the dos
+    next lines:
+        if ISPIN = 1:
+            Energy pDOS1 PDOS2 ... TotalDOS
+        else:
+            Energy pDOS1_up PDOS2_up ... TotalDOS_up pDOS1_down PDOS2_down ... TotalDOS_down
+    '''
+
+    inp = open(opts.dosFromFile).readlines()
+
+    # the dos basic info
+    nspin, nedos = [int(x) for x in inp[0].split()[1:]]
+    labels = inp[1].split()[1:]
+    # data
+    DOS = np.array([line.split() for line in inp[2:] if line.strip()],
+            dtype=float)
+    NoPdos = (DOS.shape[1] - 1) / nspin - 1
+
+    tDOS = np.empty((nedos, nspin))
+    pDOS = []
+    xen = DOS[:,0]
+    for ii in range(nspin):
+        tDOS[:,ii] = DOS[:, (ii + 1) * (NoPdos + 1)]
+    for pp in range(NoPdos):
+        tmp = []
+        for ii in range(nspin):
+            tmp += [DOS[:, (pp + 1) + ii * (NoPdos + 1)]]
+        pDOS += [np.array(tmp).T]
+
+    opts.nedos = nedos
+    opts.pdosAtom = ['' for x in range(NoPdos)]
+    opts.pdosLabel = labels
+
+    return xen, tDOS, pDOS
+
+def saveDOSToFile(opts, xen, tDOS, pDOS):
+    '''
+    save DOS info to file.
+
+    the format of the DOS file:
+    first line: ISPIN, NEDOS
+    second line: labels of the dos
+    next lines:
+        if ISPIN = 1:
+            Energy pDOS1 PDOS2 ... TotalDOS
+        else:
+            Energy pDOS1_up PDOS2_up ... TotalDOS_up pDOS1_down PDOS2_down ... TotalDOS_down
+    '''
+
+    nspin = tDOS.shape[1]
+    nedos = tDOS.shape[0]
+    NoPdos = len(pDOS)
+
+    out = open(opts.dosToFile, 'w')
+    out.write('# %5d %8d\n' % (nspin, nedos))
+    labels = '# ' + ' '.join(opts.pdosLabel) + '\n'
+    out.write(labels)
+
+    for nn in range(nedos):
+        line = '%8.4f ' % xen[nn]
+        for ii in range(nspin):
+            for p in pDOS:
+                line += '%8.4f ' % p[nn,ii]
+            line += '%8.4f ' % tDOS[nn,ii]
+        line += '\n'
+        out.write(line)
 
 ############################################################
 def dosplot(xen, tdos, pdos, opts):
@@ -274,6 +355,7 @@ def dosplot(xen, tdos, pdos, opts):
     ax.xaxis.set_minor_locator(AutoMinorLocator(2))
     ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
+    opts.pdosLabel = plabels
     ax.legend(LINES, plabels,
               loc=opts.legendloc, 
               fontsize='small',
@@ -396,6 +478,16 @@ def command_line_arg():
             default='default',
             help='plot style of matplotlib. See "plt.style.available" for list of available styles.')
 
+    par.add_option('--fromfile', 
+            action='store', type='string', dest='dosFromFile',
+            default=None,
+            help='plot the dos contained in the file')
+
+    par.add_option('--tofile', 
+            action='store', type='string', dest='dosToFile',
+            default=None,
+            help='save DOS to file.')
+
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
             help='not show the resulting image')
@@ -407,12 +499,15 @@ if __name__ == '__main__':
     from time import time
     opts, args = command_line_arg()
 
-    t0 = time()
-    xen, tdos, pdos = generateDos(opts)
-    t1 = time()
-    print
-    print 'DOS calc completed! Time Used: %.2f [sec]' % (t1 - t0)
-    print
+    if opts.dosFromFile:
+        xen, tdos, pdos = readDOSFromFile(opts)
+    else:
+        t0 = time()
+        xen, tdos, pdos = generateDos(opts)
+        t1 = time()
+        print
+        print 'DOS calc completed! Time Used: %.2f [sec]' % (t1 - t0)
+        print
     
     t0 = time()
     dosplot(xen, tdos, pdos, opts)
@@ -420,6 +515,10 @@ if __name__ == '__main__':
     print
     print 'DOS plot completed! Time Used: %.2f [sec]' % (t1 - t0)
     print
+    
+    # save dos to file
+    if opts.dosToFile:
+        saveDOSToFile(opts, xen, tdos, pdos)
 
     if not opts.quiet:
         from subprocess import call
