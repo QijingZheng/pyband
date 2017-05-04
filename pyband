@@ -191,11 +191,12 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
                                 color=lc,
                                 )
                 if whts is not None:
-                    ax.scatter(kpath, bands[Ispin, :, Iband],
-                            color=opts.occMarkerColor,
-                            s=whts[Ispin,:,Iband] * opts.occMarkerSize,
-                            marker=opts.occMarker, zorder=1, lw=0.0,
-                            alpha=0.5)
+                    for ii in range(len(opts.occ)):
+                        ax.scatter(kpath, bands[Ispin, :, Iband],
+                                color=opts.occMarkerColor[ii],
+                                s=whts[ii][Ispin,:,Iband] * opts.occMarkerSize[ii],
+                                marker=opts.occMarker[ii], zorder=1, lw=0.0,
+                                alpha=0.5)
 
     for bd in kpt_bounds:
         ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
@@ -301,8 +302,8 @@ def command_line_arg():
             help='resolution of the output image')
 
     par.add_option('--occ', 
-            action='store', type="string", dest='occ',
-            default=None,
+            action='append', type="string", dest='occ',
+            default=[],
             help='orbital contribution of each KS state')
 
     par.add_option('--occL', 
@@ -335,18 +336,18 @@ def command_line_arg():
             help='pad between colorbar and axis')
 
     par.add_option('--occM', 
-            action='store', type="string", dest='occMarker',
-            default='o',
+            action='append', type="string", dest='occMarker',
+            default=[],
             help='the marker used in the plot')
 
     par.add_option('--occMs', 
-            action='store', type="int", dest='occMarkerSize',
-            default=20,
+            action='append', type="int", dest='occMarkerSize',
+            default=[],
             help='the size of the marker')
 
     par.add_option('--occMc', 
-            action='store', type="string", dest='occMarkerColor',
-            default=None,
+            action='append', type="string", dest='occMarkerColor',
+            default=[],
             help='the color of the marker')
 
     par.add_option('-q', '--quiet', 
@@ -361,15 +362,32 @@ if __name__ == '__main__':
 
     if opts.occ:
 
-        alist = np.array(opts.occ.split(), dtype=int)
-        nlist = [x for x in alist if not x == -1]
-        cmark, = np.where(alist == -1)
-        for ii in cmark:
-            nlist += range(alist[ii + 1], alist[ii + 2] + 1)
-        occAtom = set(nlist)
+        Nocc = len(opts.occ)
+        occM  = ['o' for ii in range(Nocc)]
+        occMc = ['r' for ii in range(Nocc)]
+        occMs = [20  for ii in range(Nocc)]
+        for ii in range(min(len(opts.occMarker), Nocc)):
+            occM[ii] = opts.occMarker[ii]
+        for ii in range(min(len(opts.occMarkerSize), Nocc)):
+            occMs[ii] = opts.occMarkerSize[ii]
+        for ii in range(min(len(opts.occMarkerColor), Nocc)):
+            occMc[ii] = opts.occMarkerColor[ii]
+        opts.occMarker = occM
+        opts.occMarkerColor = occMc
+        opts.occMarkerSize = occMs
 
-        # occAtom = [int(x) for x in opts.occ.split()]
-        whts = WeightFromPro(opts.procar, whichAtom = occAtom)
+        whts = []
+        for occ in opts.occ:
+            alist = np.array(occ.split(), dtype=int)
+            nlist = [x for x in alist if not x == -1]
+            cmark, = np.where(alist == -1)
+            for ii in cmark:
+                nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+            occAtom = set(nlist)
+
+            # occAtom = [int(x) for x in opts.occ.split()]
+            # whts = WeightFromPro(opts.procar, whichAtom = occAtom)
+            whts.append(WeightFromPro(opts.procar, whichAtom = occAtom))
     else:
         whts = None
 
