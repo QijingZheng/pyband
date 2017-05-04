@@ -141,10 +141,10 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
         LW = opts.occLC_lw
         DELTA = 0.3
-        EnergyWeight = whts
-        # norm = mpl.colors.Normalize(vmin=EnergyWeight.min(),
-        #                             vmax=EnergyWeight.max())
-        norm = mpl.colors.Normalize(0, 1)
+        EnergyWeight = whts[0]
+        norm = mpl.colors.Normalize(vmin=EnergyWeight.min(),
+                                    vmax=EnergyWeight.max())
+        # norm = mpl.colors.Normalize(0, 1)
         # create a ScalarMappable and initialize a data structure
         s_m = mpl.cm.ScalarMappable(cmap=opts.occLC_cmap, norm=norm)
         s_m.set_array([EnergyWeight])
@@ -161,10 +161,12 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
                 points = np.array([x, y]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
-                lc = LineCollection(segments, cmap=opts.occLC_cmap, # alpha=0.7,
+                lc = LineCollection(segments,
+                                    # cmap=opts.occLC_cmap, # alpha=0.7,
+                                    colors=[s_m.to_rgba(ww) for ww in (z[1:] + z[:-1])/2.]
                                     # norm=plt.Normalize(0, 1)
                                     )
-                lc.set_array((z[1:] + z[:-1]) / 2)
+                # lc.set_array((z[1:] + z[:-1]) / 2)
                 lc.set_linewidth(LW)
                 ax.add_collection(lc)
 
