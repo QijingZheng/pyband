@@ -102,18 +102,18 @@ def get_bandInfo(inFile = 'OUTCAR'):
             end = (ii + 1) * Nk_in_seg
             kpt_path[start:end] += kpt_path[start-1]
 
-        kpt_path /= kpt_path[-1]
-        kpt_bounds =  np.concatenate((kpt_path[0::Nk_in_seg], [1.0,]))
+        # kpt_path /= kpt_path[-1]
+        kpt_bounds =  np.concatenate((kpt_path[0::Nk_in_seg], [kpt_path[-1],]))
     else:
         # get band path
         vkpt_diff = np.diff(vkpts, axis=0)
         kpt_path = np.zeros(nkpts, dtype=float)
         kpt_path[1:] = np.cumsum(np.linalg.norm(np.dot(vkpt_diff, B), axis=1))
-        kpt_path /= kpt_path[-1]
+        # kpt_path /= kpt_path[-1]
 
         # get boundaries of band path
         xx = np.diff(kpt_path)
-        kpt_bounds = np.concatenate(([0.0,], kpt_path[np.isclose(xx, 0.0)], [1.0,]))
+        kpt_bounds = np.concatenate(([0.0,], kpt_path[np.isclose(xx, 0.0)], [kpt_path[-1],]))
 
     return kpt_path, bands, Efermi, kpt_bounds
 
@@ -206,7 +206,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
     ax.set_ylabel('Energy [eV]', # fontsize='small',
             labelpad=5)
     ax.set_ylim(ymin, ymax)
-    ax.set_xlim(0.0, 1.0)
+    ax.set_xlim(kpath.min(), kpath.max())
 
     ax.set_xticks(kpt_bounds)
     if opts.kpts:
