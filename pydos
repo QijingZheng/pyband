@@ -328,7 +328,7 @@ def dosplot(xen, tdos, pdos, opts):
     if opts.showtotal:
         for ii in range(nspin):
             fill_direction = 1 if ii == 0 else -1
-            lc = None if ii == 0 else line.get_color()
+            lc = 'k' if ii == 0 else line.get_color()
 
             if opts.fill:
                 line, im = gradient_fill(xen, tdos[:,ii], ax=ax, 
@@ -452,11 +452,6 @@ def command_line_arg():
             action='append', type="string", dest='linecolors',
             default=[],
             help='linecolors of the band plot')
-
-    # par.add_option('--lc',
-    #         action='append', type="float", dest='linecolor',
-    #         default=[],
-    #         help='linecolor of the band plot')
 
     par.add_option('--fill',
             action='store_true', dest='fill',
