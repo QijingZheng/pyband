@@ -295,15 +295,18 @@ def dosplot(xen, tdos, pdos, opts):
 
     plabels = []
     LWs = []
-    # LCs = []
+    LCs = []
     if opts.pdosAtom:
         plabels = ['p_%d' % ii for ii in range(len(opts.pdosAtom))]
         LWs = [0.5 for ii in range(len(opts.pdosAtom))]
+        LCs = [None for ii in range(len(opts.pdosAtom))]
 
         for ii in range(min(len(opts.pdosAtom), len(opts.pdosLabel))):
             plabels[ii] = opts.pdosLabel[ii]
         for ii in range(min(len(opts.pdosAtom), len(opts.linewidth))):
             LWs[ii] = opts.linewidth[ii]
+        for ii in range(min(len(opts.pdosAtom), len(opts.linecolors))):
+            LCs[ii] = opts.linecolors[ii]
 
     plabels += ['total']
 
@@ -311,7 +314,7 @@ def dosplot(xen, tdos, pdos, opts):
     for ip, p in enumerate(pdos):
         for ii in range(nspin):
             fill_direction = 1 if ii == 0 else -1
-            lc = None if ii == 0 else line.get_color()
+            lc = LCs[ip] if ii == 0 else line.get_color()
 
             if opts.fill:
                 line, im = gradient_fill(xen, p[:,ii], ax=ax, lw=LWs[ip],
@@ -444,6 +447,11 @@ def command_line_arg():
             action='append', type="float", dest='linewidth',
             default=[],
             help='linewidth of the band plot')
+
+    par.add_option('--lc',
+            action='append', type="string", dest='linecolors',
+            default=[],
+            help='linecolors of the band plot')
 
     # par.add_option('--lc',
     #         action='append', type="float", dest='linecolor',
