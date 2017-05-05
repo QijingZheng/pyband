@@ -1,5 +1,6 @@
-band and dos plot using python matplotlib
+#band and dos plot using python matplotlib
 
+```
 Usage: pyband [options] arg1 arg2
 
 Options:
@@ -53,4 +54,4 @@ Options:
   --notot               not show total dos
   -q, --quiet           not show the resulting image
 
-
+```
