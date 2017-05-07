@@ -9,7 +9,7 @@ from optparse import OptionParser
 __version__ = "1.0"
 ############################################################
 
-def WeightFromPro(infile='PROCAR', whichAtom=None):
+def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None):
     """
     Contribution of selected atoms to the each KS orbital
     """
@@ -19,8 +19,13 @@ def WeightFromPro(infile='PROCAR', whichAtom=None):
     nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
                             if xx.isdigit()]
 
-    Weights = np.asarray([line.split()[-1] for line in FileContents
-                          if not re.search('[a-zA-Z]', line)], dtype=float)
+    if spd:
+        Weights = np.asarray([line.split()[1:-1] for line in FileContents
+                              if not re.search('[a-zA-Z]', line)], dtype=float)
+        Weights = np.sum(Weights[:,spd], axis=1)
+    else:
+        Weights = np.asarray([line.split()[-1] for line in FileContents
+                              if not re.search('[a-zA-Z]', line)], dtype=float)
     
     nspin = Weights.shape[0] / (nkpts * nbands * nions)
     Weights.resize(nspin, nkpts, nbands, nions)
@@ -310,6 +315,7 @@ def command_line_arg():
 
     par.add_option('--occL', 
             action='store_true', dest='occLC',
+            default=False,
             help='use Linecollection or Scatter to show the orbital contribution')
 
     par.add_option('--occLC_cmap', 
@@ -352,6 +358,11 @@ def command_line_arg():
             default=[],
             help='the color of the marker')
 
+    par.add_option('--spd', 
+            action='store', type="string", dest='spdProjections',
+            default=None,
+            help='Spd-projected wavefunction character of each KS orbital.')
+
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
             help='not show the resulting image')
@@ -389,8 +400,18 @@ if __name__ == '__main__':
 
             # occAtom = [int(x) for x in opts.occ.split()]
             # whts = WeightFromPro(opts.procar, whichAtom = occAtom)
-            whts.append(WeightFromPro(opts.procar, whichAtom = occAtom))
+            if opts.spdProjections and (Nocc == 1):
+                angularM = [int(x) for x in opts.spdProjections.split()]
+                # print angularM
+                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom, spd=angularM))
+            else:
+                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom))
     else:
+        # if opts.spdProjections:
+        #     angularM = [int(x) for x in opts.spdProjections.split()]
+        #     whts = WeightFromPro(opts.procar, whichAtom=None, spd=angularM)
+        # else:
+        #     whts = None
         whts = None
 
     kpath, bands, efermi, kpt_bounds = get_bandInfo(opts.filename)
