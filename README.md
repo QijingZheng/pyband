@@ -1,4 +1,15 @@
-# band and dos plot using python matplotlib
+# Introduction
+
+`pyband` and `pydos` are two python scripts that take in the VASP calculation results (e.g. OUTCAR and PROCAR) and  convert the results to images. It offers a fast and effective way to preview the calcuated results. The image plotting utilizes `matplotlib` package.
+
+# Examples
+## `pyband`
+
+When no arguments is given, `pyband` reads in `OUTCAR` (optionally `KPOINTS`) and find the band information within. It then plot the resulting band structure and save it as `band.png`.
+
+```$ pyband```
+![band_with_no_args](examples/band1.png | width=100)
+ 
 
 ```
 Usage: pyband [options] arg1 arg2
