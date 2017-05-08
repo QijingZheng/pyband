@@ -41,9 +41,19 @@ where in the arguments of `--spd`:
 
 
 > s orbital: 0
+
 > py, pz, px orbital: 1 2 3
+
 > dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8
 
 More command line arguments can be found by `pyband -h`.
 
 ## pydos
+
+This script is used to plot partial density of states (pDOS) from VASP `PROCAR` files. 
+
+`pydos -p '1 3 4' -p '2 7 8' -p '5 6 9' -z 0.65 -x -1 2  -y 0 6`
+
+![pdos_example](examples/dos_p3.png)
+
+where `-p` specifies the atom indexes, `-x` and `-y` determines the x and y limits of the plot, `-z` is followed by the energy reference of the plot.
