@@ -24,6 +24,7 @@ def WeightFromPro(infile='PROCAR'):
     Contribution of selected atoms to the each KS orbital
     """
 
+    assert os.path.isfile(infile), '%s cannot be found!' % infile
     FileContents = [line for line in open(infile) if line.strip()]
 
     nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
@@ -365,7 +366,7 @@ def dosplot(xen, tdos, pdos, opts):
               frameon=True,
               framealpha=0.6)
 
-    plt.tight_layout(pad=0.20)
+    plt.tight_layout(pad=0.50)
     plt.savefig(opts.dosimage, dpi=opts.dpi)
 
 ############################################################

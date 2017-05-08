@@ -14,6 +14,7 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None):
     Contribution of selected atoms to the each KS orbital
     """
 
+    assert os.path.isfile(infile), '%s cannot be found!' % infile
     FileContents = [line for line in open(infile) if line.strip()]
 
     nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
