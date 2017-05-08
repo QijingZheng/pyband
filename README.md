@@ -22,8 +22,8 @@ automatically recognized by the script, which can be any format that is
 supported by `matplotlib`. The size of the image can also be speified by `-s
 width height` command line arguments. 
 
-In the above image, the name of the high-symmetry K-point is not shown, which
-can be specified by `-k` flag.
+The labels of the high-symmetry K-points, which are not shown in the figure, can
+be designate by `-k` flag.
 
 ```$ pyband -k mgkm```
 
