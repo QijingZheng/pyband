@@ -8,8 +8,8 @@ utilizes `matplotlib` package.
 # Examples
 ## pyband
 
-When no arguments is given, `pyband` reads in `OUTCAR` (optionally `KPOINTS`)
-and find the band information within. It then plot the resulting band structure
+When no argument is given, `pyband` reads in `OUTCAR` (optionally `KPOINTS`)
+and find the band information within. It then plots the resulting band structure
 and save it as `band.png`.
 
 ```$ pyband```
