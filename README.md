@@ -25,7 +25,7 @@ In some cases, if you are interested in finding out the characters of each KS st
 
 ![band_with_atom_weight](examples/band_with_atoms_weight.png)
 
-where in the above image, `1 3 4` are the atom index starting from 1 to #atoms. The size of red dots in the figure indicates the weight of the specified atoms to the KS states.  This can also be represented using a colormap:
+where `1 3 4` are the atom index starting from 1 to #atoms  in the above image. The size of red dots in the figure indicates the weight of the specified atoms to the KS states.  This can also be represented using a colormap:
 
 ```$ pyband --occ '1 3 4' --occL```
 
