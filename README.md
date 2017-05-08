@@ -19,7 +19,7 @@ In the above image, the name of the high-symmetry K-point is not shown, which ca
 
 ![band_with_kname](examples/band_with_kname.png)
 
-In some cases, if you are interested in finding out the characters of each KS states, e.g. the contribution of some atom to each KS state, the flag `--occ atoms` comes into help.
+In some cases, if you are interested in finding out the characters of each KS states, e.g. the contribution of some atom to each KS state, the flag `--occ atoms` comes to help.
 
 ```$ pyband --occ '1 3 4'```
 
