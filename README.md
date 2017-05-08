@@ -23,7 +23,7 @@ supported by `matplotlib`. The size of the image can also be speified by `-s
 width height` command line arguments. 
 
 In the above image, the name of the high-symmetry K-point is not shown, which
-can be specifiec by `-k` flag.
+can be specified by `-k` flag.
 
 ```$ pyband -k mgkm```
 
