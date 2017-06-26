@@ -17,8 +17,10 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None):
     assert os.path.isfile(infile), '%s cannot be found!' % infile
     FileContents = [line for line in open(infile) if line.strip()]
 
-    nkpts, nbands, nions = [int(xx) for xx in FileContents[1].split()
-                            if xx.isdigit()]
+    # when the band number is too large, there will be no space between ";" and
+    # the actual band number. A bug found by Homlee Guo.
+    # Here, #kpts, #bands and #ions are all integers
+    nkpts, nbands, nions = [int(xx) for xx in re.sub('[^0-9]', ' ', FileContents[1]).split()]
 
     if spd:
         Weights = np.asarray([line.split()[1:-1] for line in FileContents
