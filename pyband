@@ -187,10 +187,10 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         else:
             ori = 'vertical'
         cbar = plt.colorbar(s_m, cax=ax_cbar,
-                ticks=[0.0, 1.0],
+                # ticks=[0.0, 1.0],
                 orientation=ori)
-        cbar.ax.set_xticklabels([])
-        cbar.ax.set_yticklabels([])
+        # cbar.ax.set_xticklabels([])
+        # cbar.ax.set_yticklabels([])
 
     else:
         for Ispin in range(nspin):
