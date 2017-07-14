@@ -32,7 +32,9 @@ def WeightFromPro(infile='PROCAR'):
     # Here, #kpts, #bands and #ions are all integers
     nkpts, nbands, nions = [int(xx) for xx in re.sub('[^0-9]', ' ', FileContents[1]).split()]
 
-    Weights = np.asarray([line.split()[-1] for line in FileContents
+    # Weights = np.asarray([line.split()[-1] for line in FileContents
+    #                       if not re.search('[a-zA-Z]', line)], dtype=float)
+    Weights = np.asarray([line.split()[1:-1] for line in FileContents
                           if not re.search('[a-zA-Z]', line)], dtype=float)
 
     kpt_weight = np.asarray([line.split()[-1] for line in FileContents if 'weight' in line], dtype=float)
@@ -40,9 +42,10 @@ def WeightFromPro(infile='PROCAR'):
     energies = np.asarray([line.split()[-4] for line in FileContents
                             if 'occ.' in line], dtype=float)
 
+    nlmax = Weights.shape[-1]
     nspin = Weights.shape[0] / (nkpts * nbands * nions)
 
-    Weights.resize(nspin, nkpts, nbands, nions)
+    Weights.resize(nspin, nkpts, nbands, nions, nlmax)
     kpt_weight.resize(nspin, nkpts)
     energies.resize(nspin, nkpts, nbands)
     
@@ -134,7 +137,7 @@ def generateDos(opts):
     '''
 
     ens, kptw, whts = WeightFromPro(opts.procar)
-    nspin, nkpts, nbands, nions = whts.shape
+    nspin, nkpts, nbands, nions, nlmax = whts.shape
 
     emin =  ens.min()
     emax =  ens.max()
@@ -186,7 +189,13 @@ def generateDos(opts):
                 nlist += range(alist[ii + 1], alist[ii + 2] + 1)
             nlist = [x - 1 for x in set(nlist)]
 
-            pwhts = np.sum(whts[:,:,:, nlist], axis=-1)
+            if ia <= len(opts.spdProjections) - 1:
+                spdList = [int(x) for x in opts.spdProjections[ia].split()]
+                pwhts = np.sum(whts[..., spdList], axis=-1)
+            else:
+                pwhts = np.sum(whts, axis=-1)
+
+            pwhts = np.sum(pwhts[:,:,:, nlist], axis=-1)
 
             p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).T
 
@@ -493,6 +502,15 @@ def command_line_arg():
             action='store', type='string', dest='dosToFile',
             default=None,
             help='save DOS to file.')
+
+    par.add_option('--spd', 
+            action='append', type="string", dest='spdProjections',
+            default=[],
+            help='''
+Spd-projected wavefunction character of each KS orbital.
+    s orbital: 0\n
+    py, pz, px orbital: 1 2 3\n
+    dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 ''')
 
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
