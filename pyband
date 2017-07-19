@@ -9,7 +9,7 @@ from optparse import OptionParser
 __version__ = "1.0"
 ############################################################
 
-def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None):
+def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
     """
     Contribution of selected atoms to the each KS orbital
     """
@@ -31,13 +31,20 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None):
                               if not re.search('[a-zA-Z]', line)], dtype=float)
     
     nspin = Weights.shape[0] / (nkpts * nbands * nions)
-    Weights.resize(nspin, nkpts, nbands, nions)
+    nspin /= 4 if lsorbit else 1
+
+    if lsorbit:
+        Weights.resize(nspin, nkpts, nbands, 4, nions)
+        Weights = Weights[:,:,:,0,:]
+    else:
+        Weights.resize(nspin, nkpts, nbands, nions)
     
     if whichAtom is None:
         return np.sum(Weights, axis=-1)
     else:
         whichAtom = [xx - 1 for xx in whichAtom]
         return np.sum(Weights[:,:,:,whichAtom], axis=-1)
+
 
 
 ############################################################
@@ -366,9 +373,14 @@ def command_line_arg():
             default=None,
             help='Spd-projected wavefunction character of each KS orbital.')
 
+    par.add_option('--lsorbit',
+            action='store_true', dest='lsorbit',
+            help='Spin orbit coupling on, special treament of PROCAR')
+
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
             help='not show the resulting image')
+
 
     return  par.parse_args( )
 
@@ -406,9 +418,11 @@ if __name__ == '__main__':
             if opts.spdProjections and (Nocc == 1):
                 angularM = [int(x) for x in opts.spdProjections.split()]
                 # print angularM
-                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom, spd=angularM))
+                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
+                    spd=angularM, lsorbit=opts.lsorbit))
             else:
-                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom))
+                whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
+                    lsorbit=opts.lsorbit))
     else:
         # if opts.spdProjections:
         #     angularM = [int(x) for x in opts.spdProjections.split()]
