@@ -428,7 +428,7 @@ def command_line_arg():
 
     par.add_option('--sigma',
             action='store', type="float",
-            dest='sigma', default=0.02,
+            dest='sigma', default=0.05,
             help='smearing parameter, default 0.02')
 
     par.add_option('-n', '--nedos',
