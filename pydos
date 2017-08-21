@@ -19,7 +19,7 @@ mpl.rcParams['axes.unicode_minus'] = False
 __version__ = "1.0"
 ############################################################
 
-def WeightFromPro(infile='PROCAR'):
+def WeightFromPro(infile='PROCAR', lsorbit=False):
     """
     Contribution of selected atoms to the each KS orbital
     """
@@ -44,8 +44,14 @@ def WeightFromPro(infile='PROCAR'):
 
     nlmax = Weights.shape[-1]
     nspin = Weights.shape[0] / (nkpts * nbands * nions)
+    nspin /= 4 if lsorbit else 1
 
-    Weights.resize(nspin, nkpts, nbands, nions, nlmax)
+    if lsorbit:
+        Weights.resize(nspin, nkpts, nbands, 4, nions)
+        Weights = Weights[:,:,:,0,:]
+    else:
+        Weights.resize(nspin, nkpts, nbands, nions, nlmax)
+
     kpt_weight.resize(nspin, nkpts)
     energies.resize(nspin, nkpts, nbands)
     
