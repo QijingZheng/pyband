@@ -47,8 +47,8 @@ def WeightFromPro(infile='PROCAR', lsorbit=False):
     nspin /= 4 if lsorbit else 1
 
     if lsorbit:
-        Weights.resize(nspin, nkpts, nbands, 4, nions)
-        Weights = Weights[:,:,:,0,:]
+        Weights.resize(nspin, nkpts, nbands, 4, nions, nlmax)
+        Weights = Weights[:,:,:,0,:,:]
     else:
         Weights.resize(nspin, nkpts, nbands, nions, nlmax)
 
