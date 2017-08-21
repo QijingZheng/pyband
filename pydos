@@ -142,7 +142,7 @@ def generateDos(opts):
     generate dos
     '''
 
-    ens, kptw, whts = WeightFromPro(opts.procar)
+    ens, kptw, whts = WeightFromPro(opts.procar, opts.lsorbit)
     nspin, nkpts, nbands, nions, nlmax = whts.shape
 
     emin =  ens.min()
@@ -517,6 +517,10 @@ Spd-projected wavefunction character of each KS orbital.
     s orbital: 0\n
     py, pz, px orbital: 1 2 3\n
     dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 ''')
+
+    par.add_option('--lsorbit',
+            action='store_true', dest='lsorbit',
+            help='Spin orbit coupling on, special treament of PROCAR')
 
     par.add_option('-q', '--quiet', 
             action='store_true', dest='quiet',
