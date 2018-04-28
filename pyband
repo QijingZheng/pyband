@@ -102,7 +102,7 @@ def get_bandInfo(inFile = 'OUTCAR'):
 
     if os.path.isfile('KPOINTS') and kp[2][0].upper() == 'L':
         Nk_in_seg = int(kp[1].strip())
-        Nseg = nkpts / Nk_in_seg
+        Nseg = nkpts // Nk_in_seg
         vkpt_diff = np.zeros_like(vkpts, dtype=float)
         
         for ii in range(Nseg):
