@@ -43,8 +43,8 @@ def WeightFromPro(infile='PROCAR', lsorbit=False):
                             if 'occ.' in line], dtype=float)
 
     nlmax = Weights.shape[-1]
-    nspin = Weights.shape[0] / (nkpts * nbands * nions)
-    nspin /= 4 if lsorbit else 1
+    nspin = Weights.shape[0] // (nkpts * nbands * nions)
+    nspin //= 4 if lsorbit else 1
 
     if lsorbit:
         Weights.resize(nspin, nkpts, nbands, 4, nions, nlmax)
