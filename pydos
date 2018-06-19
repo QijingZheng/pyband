@@ -155,6 +155,10 @@ def generateDos(opts):
     # tDOS = np.empty((opts.nedos, nspin))
     pDOS = []
 
+    # make all the k-points weight equal
+    if opts.homoKpts:
+        kptw[...] = 1.0
+
     tdos_smear = np.empty((nspin, nkpts, nbands, opts.nedos))
     for IS in range(nspin):
         sign = 1 if IS == 0 else -1
@@ -187,17 +191,19 @@ def generateDos(opts):
             factor[ii] = opts.pdosFactor[ii]
 
         # only plot DOS from selected kpoints, default from all kpoints
-        selected_kpts_index = [None for ii in range(len(opts.pdosAtom))]
+        selected_kpts_index = [slice(None, None) for ii in range(len(opts.pdosAtom))]
         for ii in range(min(len(opts.pdosAtom), len(opts.pdosKpts))):
             alist = np.array(opts.pdosKpts[ii].split(), dtype=int)
+            # index starting from 1
+            assert np.max(alist) <= nkpts, "Maximum kpoint index must <{:d}".format(nkpts)
+            assert np.min(alist) >=     1, "Minimum kpoint index must >=1"
+
             nlist = [x for x in alist if not x == -1]
             cmark, = np.where(alist == -1)
             for ii in cmark:
                 nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+            # index starting from 0
             nlist = [x - 1 for x in set(nlist)]
-
-            assert np.max(nlist) <= nkpts, "Maximum kpoint index must <{:d}".format(nkpts)
-            assert np.min(nlist) >=     1, "Minimum kpoint index must >=1"
 
             selected_kpts_index[ii] = nlist
 
@@ -205,11 +211,14 @@ def generateDos(opts):
             # p = np.zeros((opts.nedos, nspin))
 
             alist = np.array(atoms.split(), dtype=int)
-            nlist = [x for x in alist if not x == -1]
-            cmark, = np.where(alist == -1)
-            for ii in cmark:
-                nlist += range(alist[ii + 1], alist[ii + 2] + 1)
-            nlist = [x - 1 for x in set(nlist)]
+            if 0 in alist:
+                nlist = range(nions)
+            else:
+                nlist = [x for x in alist if not x == -1]
+                cmark, = np.where(alist == -1)
+                for ii in cmark:
+                    nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+                nlist = [x - 1 for x in set(nlist)]
 
             if ia <= len(opts.spdProjections) - 1:
                 spdList = [int(x) for x in opts.spdProjections[ia].split()]
@@ -219,7 +228,9 @@ def generateDos(opts):
 
             pwhts = np.sum(pwhts[:,:,:, nlist], axis=-1)
 
-            p = np.sum(pwhts[..., np.newaxis] * tdos_smear[:,selected_kpts_index[ia],:,:], axis=(1, 2)).T
+            # p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).T
+            p = np.sum(pwhts[:,selected_kpts_index[ia],:, np.newaxis] * \
+                       tdos_smear[:,selected_kpts_index[ia],...], axis=(1, 2)).T
 
             for IS in range(nspin):
                 sign = 1 if IS == 0 else -1
@@ -415,12 +426,17 @@ def command_line_arg():
     par.add_option("-p", '--pdos', 
             action='append', type="string", dest='pdosAtom',
             default=[],
-            help='specify which atoms to plot the pdos')
+            help='specify which atoms to plot the pdos, 0 for all atoms')
 
     par.add_option("-k", '--kpts', 
             action='append', type="string", dest='pdosKpts',
             default=[],
             help='specify which k-points to plot the pdos')
+
+    par.add_option("--homokpts", 
+            action='store_true', dest='homoKpts',
+            default=False,
+            help='Homogeneous k-points weights')
 
     par.add_option('--pdosoffset', 
             action='store', type="float", dest='pdosOffset',
