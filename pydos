@@ -181,9 +181,25 @@ def generateDos(opts):
 
     if len(opts.pdosAtom) != 0:
 
+        # add a factor for each PDOS
         factor = np.ones(len(opts.pdosAtom))
         for ii in range(min(len(opts.pdosAtom), len(opts.pdosFactor))):
             factor[ii] = opts.pdosFactor[ii]
+
+        # only plot DOS from selected kpoints, default from all kpoints
+        selected_kpts_index = [None for ii in range(len(opts.pdosAtom))]
+        for ii in range(min(len(opts.pdosAtom), len(opts.pdosKpts))):
+            alist = np.array(opts.pdosKpts[ii].split(), dtype=int)
+            nlist = [x for x in alist if not x == -1]
+            cmark, = np.where(alist == -1)
+            for ii in cmark:
+                nlist += range(alist[ii + 1], alist[ii + 2] + 1)
+            nlist = [x - 1 for x in set(nlist)]
+
+            assert np.max(nlist) <= nkpts, "Maximum kpoint index must <{:d}".format(nkpts)
+            assert np.min(nlist) >=     1, "Minimum kpoint index must >=1"
+
+            selected_kpts_index[ii] = nlist
 
         for ia, atoms in enumerate(opts.pdosAtom):
             # p = np.zeros((opts.nedos, nspin))
@@ -203,7 +219,7 @@ def generateDos(opts):
 
             pwhts = np.sum(pwhts[:,:,:, nlist], axis=-1)
 
-            p = np.sum(pwhts[..., np.newaxis] * tdos_smear, axis=(1, 2)).T
+            p = np.sum(pwhts[..., np.newaxis] * tdos_smear[:,selected_kpts_index[ia],:,:], axis=(1, 2)).T
 
             for IS in range(nspin):
                 sign = 1 if IS == 0 else -1
@@ -400,6 +416,11 @@ def command_line_arg():
             action='append', type="string", dest='pdosAtom',
             default=[],
             help='specify which atoms to plot the pdos')
+
+    par.add_option("-k", '--kpts', 
+            action='append', type="string", dest='pdosKpts',
+            default=[],
+            help='specify which k-points to plot the pdos')
 
     par.add_option('--pdosoffset', 
             action='store', type="float", dest='pdosOffset',
