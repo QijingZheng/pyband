@@ -9,6 +9,7 @@ from collections import Iterable
 
 import matplotlib as mpl
 mpl.use('agg')
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
@@ -306,6 +307,9 @@ class procar(object):
         '''
         The total DOS
         '''
+        if self._tdos is None:
+            self.init_dos()
+
         if self._totalDOS is None:
             self._totalDOS = np.sum(self._tdos, axis=(1, 2))
 
@@ -403,6 +407,8 @@ def init_fig(args):
     '''
 
     plt.style.use(args.style)
+    # do NOT use unicode minus
+    mpl.rcParams['axes.unicode_minus'] = False
     fig, axes = plt.subplots(nrows=args.nrows, ncols=args.ncols,
                              sharex=args.sharex,
                              sharey=args.sharey)
@@ -655,6 +661,9 @@ def process_dos_args(p):
     nr    = p.nrows
     nc    = p.ncols
 
+    if p.inp == []:
+        p.inp = ['PROCAR']
+
     p.naxes = nr * nc
     p.npros = len(p.inp)
     p.npdos = len(p.pdos)
@@ -663,14 +672,13 @@ def process_dos_args(p):
 
     # setting default parameters for dos plot
     p.inp    += ['PROCAR'] * (p.npdos - len(p.inp))
-    p.soc    += [False]    * (p.npdos - len(p.soc))
+    p.soc    += [False]    * (p.npros - len(p.soc))
+    p.sigma  += [0.05]     * (p.npros - len(p.sigma))
+    p.nedos  += [3000]     * (p.npros - len(p.nedos))
     p.tdos   += [True]     * (p.npdos - len(p.tdos))
     p.ax     += [0]        * (p.npdos - len(p.ax ))
     p.kpts   += [':']      * (p.npdos - len(p.kpts))
     p.spd    += [':']      * (p.npdos - len(p.spd))
-
-    p.sigma  += [0.05]     * (p.npros - len(p.sigma))
-    p.nedos  += [3000]     * (p.npros - len(p.nedos))
 
     p.xlim   += [(-6, 6)]      * (p.naxes - len(p.xlim))
     p.ylim   += [(None,None)]  * (p.naxes - len(p.ylim))
@@ -712,19 +720,23 @@ def init_dos(p):
     '''
     '''
     # processing pdos
-    no_dup_procars_inf = list(set(p.inp))
-    no_dup_procars_soc = []
+    no_dup_procars_inf = []
+    for inf in p.inp:
+        if not inf in no_dup_procars_inf:
+            no_dup_procars_inf.append(inf)
+
     p.procars = []
     p.pIDs    = []
     for inf in no_dup_procars_inf:
         ii  = p.inp.index(inf)
-        soc = p.soc[ii]
-        p.procars.append(procar(inf=inf, lsoc=soc))
+        tmp = procar(inf=inf, lsoc=p.soc[ii])
+        tmp.set_sigma(p.sigma[ii])
+        tmp.set_nedos(p.nedos[ii])
+        p.procars.append(tmp)
+
     for ip in range(p.npdos):
         ii = no_dup_procars_inf.index(p.inp[ip])
         p.pIDs.append(ii)
-        p.procars[ii].set_sigma(p.sigma[ip])
-        p.procars[ii].set_nedos(p.nedos[ip])
 
     return p
 
@@ -772,6 +784,7 @@ def plot_dos(p):
             xt, yt = pro.get_total_dos()
 
         for ispin in range(pro.get_nspin()):
+            sign = 1 if ispin == 0 else -1
             if p.tdos[ip] and (not show_total_dos[iax, pid]):
                 show_total_dos[iax, pid] = True
                 line, im = gradient_fill(
@@ -781,6 +794,23 @@ def plot_dos(p):
                                alpha=0.8,
                                color=p.tdos_lc[ip],
                                label=p.tdos_lab[ip]
+                           )
+    # no pdos specification, plot total dos for each axis, each procar
+    if p.npdos == 0:
+        for iax in range(p.naxes):
+            ax = p.axes[iax]
+            for ip in range(len(p.procars)):
+                pro = p.procars[ip]
+                xt, yt = pro.get_total_dos()
+                for ispin in range(pro.get_nspin()):
+                    sign = 1 if ispin == 0 else -1
+                    line, im = gradient_fill(
+                               xt, yt[ispin], ax=ax,
+                               direction=sign,
+                               lw=0.5,
+                               alpha=0.8,
+                               color='k',
+                               label='total'
                            )
 
     for iax in range(p.naxes):
