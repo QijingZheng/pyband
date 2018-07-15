@@ -117,7 +117,7 @@ class procar(object):
         # Total DOS for each KS energy, with shape (NSPIN, NKPTS, NBANDS, NEDOS)
         self._tdos   = None
         # Total DOS with shape (NSPIN, NEDOS)
-        # self._totalDOS = None
+        self._totalDOS = None
 
         self._spd_index = {
             's' : 0,
@@ -263,6 +263,54 @@ class procar(object):
                     self._tdos[ispin, ikpt, iband] = sign * self._kptw[ispin,ikpt] \
                               * gaussian_smearing_org(self._xen, x0, self._sigma)\
 
+    def translate_selection(self, atoms=':', kpts=':', spd=':'):
+        '''
+        '''
+        # string is Iterable too
+        assert (isinstance(atoms, int) 
+             or isinstance(atoms, Iterable)
+             or isinstance(atoms, str))
+        assert (isinstance(kpts, int) 
+             or isinstance(kpts, Iterable)
+             or isinstance(kpts, str))
+        assert (isinstance(spd, int) 
+             or isinstance(spd, Iterable) 
+             or isinstance(kpts, str))
+
+        if isinstance(atoms, str):
+            atoms = string2index(atoms)
+        if isinstance(kpts, str):
+            kpts = string2index(kpts)
+        if isinstance(spd, str):
+            spd = string2index(spd)
+
+        # remove duplicate selections
+        if isinstance(atoms, Iterable):
+            atoms = list(set(atoms))
+        if isinstance(kpts, Iterable):
+            kpts = list(set(kpts))
+        if isinstance(spd, Iterable):
+            spd = [ii if isinstance(ii, int) else self._spd_index[ii]
+                   for ii in spd]
+            spd = list(set(spd))
+
+        return atoms, kpts, spd
+
+    def get_proj(self):
+        '''
+        get the partial weight.
+        '''
+        return self._aproj.copy()
+    
+    def get_total_dos(self):
+        '''
+        The total DOS
+        '''
+        if self._totalDOS is None:
+            self._totalDOS = np.sum(self._tdos, axis=(1, 2))
+
+        return self._xen, self._totalDOS
+
     def get_pdos(self, atoms=':', kpts=':', spd=':'):
         '''
         Get site/k-points/spd-orbital projected partial density of states (PDOS)
@@ -297,33 +345,7 @@ class procar(object):
         if self._tdos is None:
             self.init_dos()
 
-        # string is Iterable too
-        assert (isinstance(atoms, int) 
-             or isinstance(atoms, Iterable)
-             or isinstance(atoms, str))
-        assert (isinstance(kpts, int) 
-             or isinstance(kpts, Iterable)
-             or isinstance(kpts, str))
-        assert (isinstance(spd, int) 
-             or isinstance(spd, Iterable) 
-             or isinstance(kpts, str))
-
-        if isinstance(atoms, str):
-            atoms = string2index(atoms)
-        if isinstance(kpts, str):
-            kpts = string2index(kpts)
-        if isinstance(spd, str):
-            spd = string2index(spd)
-
-        # remove duplicate selections
-        if isinstance(atoms, Iterable):
-            atoms = list(set(atoms))
-        if isinstance(kpts, Iterable):
-            kpts = list(set(kpts))
-        if isinstance(spd, Iterable):
-            spd = [ii if isinstance(ii, int) else self._spd_index[ii]
-                   for ii in spd]
-            spd = list(set(spd))
+        atoms, kpts, spd = self.translate_selection(atoms, kpts, spd)
 
         # problem with mixed advanced indexing and basic indexing, see scipy
         # documents for reference
@@ -339,6 +361,13 @@ class procar(object):
         # arr[[0, 1], 0, :] has shape (2, Z).
         # arr[0, :, [0, 1]] has shape (2, Y), not (Y, 2)
 
+        if np.alltrue(
+                np.sort(np.arange(self._nkpts)[kpts]) == np.arange(self._nkpts)
+            ):
+            used_all_kpts = True
+        else:
+            used_all_kpts = False 
+
         pdos = []
         for ispin in range(self._nspin):
             # Avoid mixed indexing
@@ -348,7 +377,12 @@ class procar(object):
             # sum over the site projection
             pw = np.sum(pw[..., atoms], axis=-1)
 
-            td = self._tdos[ispin, kpts]
+            if used_all_kpts:
+                td = self._tdos[ispin, kpts]
+            else:
+                # if not all the k-points are used, then probably we should get
+                # rid of the k-point weights
+                td = self._tdos[ispin, kpts,...] / self._kptw[kpts, np.newaxis, np.newaxis]
 
             pdos.append(np.sum(pw[...,np.newaxis] * td, axis=(0, 1)))
 
@@ -427,11 +461,11 @@ def parse_figure_args():
     par.add_argument('-hspace',  action='store', dest='hspace',  type=float,
                       default=0.2)
     par.add_argument('-pad',     action='store', dest='pad',     type=float,
-                      default=0.8)
+                      default=0.5)
     par.add_argument('-hpad',    action='store', dest='hpad',    type=float,
-                      default=0.8)
+                      default=0.5)
     par.add_argument('-wpad',    action='store', dest='wpad',    type=float,
-                      default=0.8)
+                      default=0.5)
 
     par.add_argument('-fleft',    action='store', dest='fleft',     type=float,
                       default=0.05)
@@ -472,8 +506,10 @@ def parse_figure_args():
                       default=2,
                       help='Number of minor tick locators.')
     par.add_argument('-nxminor',  action='store', dest='nxminor', type=int,
+                      default=2,
                       help='Number of minor xtick locators.')
     par.add_argument('-nyminor',  action='store', dest='nyminor', type=int,
+                      default=2,
                       help='Number of minor yick locators.')
 
     par.add_argument('-style',  action='store', dest='style', type=str,
@@ -558,10 +594,10 @@ def parse_pdos_arg():
     par.add_argument('-tlw', action='append', dest='tdos_lw',  type=float,
                      default=[],
                      help='line width in total dos plot')
-    par.add_argument('-lc', action='append', dest='linecolors',  type=float,
+    par.add_argument('-lc', action='append', dest='linecolors',  type=str,
                      default=[],
                      help='line color in dos plot')
-    par.add_argument('-tlc', action='append', dest='tdos_lc',  type=float,
+    par.add_argument('-tlc', action='append', dest='tdos_lc',  type=str,
                      default=[],
                      help='line color in total dos plot')
     par.add_argument("-l", '-label', action='append', dest='label', type=str,
@@ -593,14 +629,6 @@ def pdosAtomsIndex(ind):
                'pdos atom specification should not be empty!'
         if len(tmp) == 1:
             if ':' in tmp[0]:
-                # ii = []
-                # for s in tmp[0].split(':'):
-                #     if s == '':
-                #         ii.append(None)
-                #     else:
-                #         ii.append(int(s))
-                # ii += (3 - len(ii)) * [None]
-                # AtomInd.append(slice(*ii))
                 AtomInd.append(tmp[0])
             else:
                 AtomInd.append(int(tmp[0]))
@@ -741,7 +769,7 @@ def plot_dos(p):
         pro   = p.procars[pid]
 
         if p.tdos[ip] and (not show_total_dos[iax, pid]):
-            xt, yt = pro.get_pdos()
+            xt, yt = pro.get_total_dos()
 
         for ispin in range(pro.get_nspin()):
             if p.tdos[ip] and (not show_total_dos[iax, pid]):
