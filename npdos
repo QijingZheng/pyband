@@ -785,7 +785,7 @@ def plot_dos(p):
 
         for ispin in range(pro.get_nspin()):
             sign = 1 if ispin == 0 else -1
-            xt = xt - p.zero[iax]
+            xt -= p.zero[iax]
             if p.tdos[ip] and (not show_total_dos[iax, pid]):
                 show_total_dos[iax, pid] = True
                 line, im = gradient_fill(
@@ -803,6 +803,7 @@ def plot_dos(p):
             for ip in range(len(p.procars)):
                 pro = p.procars[ip]
                 xt, yt = pro.get_total_dos()
+                xt -= p.zero[iax]
                 for ispin in range(pro.get_nspin()):
                     sign = 1 if ispin == 0 else -1
                     line, im = gradient_fill(
