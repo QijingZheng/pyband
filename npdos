@@ -785,6 +785,7 @@ def plot_dos(p):
 
         for ispin in range(pro.get_nspin()):
             sign = 1 if ispin == 0 else -1
+            xt = xt - p.zero[iax]
             if p.tdos[ip] and (not show_total_dos[iax, pid]):
                 show_total_dos[iax, pid] = True
                 line, im = gradient_fill(
@@ -836,12 +837,22 @@ def plot_dos(p):
 def main(cml):
     '''
     '''
+    from time import time
     p = parse_cml_arg(cml)
 
+    t0 = time()
     # initializing the dos figure
     p = init_fig(p)
+    t1 = time()
+    if not p.quiet:
+        print "Figure Initialization Completed! Time Used: {:.2f} [sec]".format(t1 - t0)
+
     # dos initialization
     p = init_dos(p)
+    t2 = time()
+    if not p.quiet:
+        print "PROCAR Initialization Completed! Time Used: {:.2f} [sec]".format(t2 - t1)
+
     # plotting pdos
     plot_dos(p)
 
