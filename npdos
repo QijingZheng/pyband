@@ -443,6 +443,18 @@ def init_fig(args):
         # ticklabel font size
         ax.tick_params(axis='x', labelsize=args.xticklabsize)
         ax.tick_params(axis='y', labelsize=args.yticklabsize)
+        
+        if args.showpanel:
+            x, y = args.panelloc
+            ax.text(x, y, '({})'.format(chr(97 + ii)),
+                    ha=args.panelha,
+                    va=args.panelva,
+                    family='monospace',
+                    fontsize=args.panelfontsize,
+                    transform=ax.transAxes
+                    )
+
+
 
     if not args.notight:
         fig.tight_layout(pad=args.pad, h_pad=args.hpad, w_pad=args.wpad)
@@ -529,6 +541,19 @@ def parse_figure_args():
                      default='dos.png',
                      help='Output image name')
 
+    par.add_argument('-showpanel', action='store', dest='showpanel', type=str2bool,
+                     default=True)
+    par.add_argument('-panelloc',   action='store', dest='panelloc', nargs=2,
+                     type=float, default=(0.05, 0.95))
+    par.add_argument('-panelha',    action='store', dest='panelha', type=str,
+                     choices=['left', 'right', 'bottom', 'top', 'center'],
+                     default='left')
+    par.add_argument('-panelva',    action='store', dest='panelva', type=str,
+                     choices=['left', 'right', 'bottom', 'top', 'center'],
+                     default='top')
+    par.add_argument('-panelfontsize', action='store', dest='panelfontsize', 
+                      default=None)
+
     return par
 
 def str2bool(v):
@@ -585,7 +610,7 @@ def parse_pdos_arg():
                      help='scale factor for the dos plot')
     par.add_argument('-z', '-zero',  action='append', dest='zero',  type=float,
                      default=[],
-                     help='Energy zero for the dos plot')
+                     help='Fermi energy for each PROCAR.')
 
     par.add_argument('-s', '-sigma',  action='append', dest='sigma',  type=float,
                      default=[],
@@ -658,31 +683,29 @@ def pdosAtomsIndex(ind):
 def process_dos_args(p):
     '''
     '''
-    nr    = p.nrows
-    nc    = p.ncols
-
-    if p.inp == []:
-        p.inp = ['PROCAR']
+    nr = p.nrows
+    nc = p.ncols
 
     p.naxes = nr * nc
     p.npros = len(p.inp)
     p.npdos = len(p.pdos)
 
+    if p.inp == []:
+        p.inp = ['PROCAR']
+
     p.pdos = pdosAtomsIndex(p.pdos)
 
     # setting default parameters for dos plot
     p.inp    += ['PROCAR'] * (p.npdos - len(p.inp))
-    p.soc    += [False]    * (p.npros - len(p.soc))
-    p.sigma  += [0.05]     * (p.npros - len(p.sigma))
-    p.nedos  += [3000]     * (p.npros - len(p.nedos))
     p.tdos   += [True]     * (p.npdos - len(p.tdos))
     p.ax     += [0]        * (p.npdos - len(p.ax ))
     p.kpts   += [':']      * (p.npdos - len(p.kpts))
     p.spd    += [':']      * (p.npdos - len(p.spd))
 
-    p.xlim   += [(-6, 6)]      * (p.naxes - len(p.xlim))
-    p.ylim   += [(None,None)]  * (p.naxes - len(p.ylim))
-    p.zero   += [0.0]          * (p.naxes - len(p.zero))
+    p.soc    += [False]    * (p.npros - len(p.soc))
+    p.sigma  += [0.05]     * (p.npros - len(p.sigma))
+    p.nedos  += [3000]     * (p.npros - len(p.nedos))
+    p.zero   += [0.0]      * (p.npros - len(p.zero))
 
     p.xshift += [0.0]      * (p.npdos - len(p.xshift))
     p.yshift += [0.0]      * (p.npdos - len(p.yshift))
@@ -695,6 +718,8 @@ def process_dos_args(p):
     p.tdos_lc    += ['k']      * (p.npdos - len(p.tdos_lc))
     p.tdos_lab   += ['total']  * (p.npdos - len(p.tdos_lab))
 
+    p.xlim   += [(-6, 6)]      * (p.naxes - len(p.xlim))
+    p.ylim   += [(None,None)]  * (p.naxes - len(p.ylim))
     p.legendLoc       += ['upper right'] * (p.naxes - len(p.legendLoc))
     p.legendNcols     += [1]             * (p.naxes - len(p.legendNcols))
     p.legendFontsize  += ['small']       * (p.naxes - len(p.legendFontsize))
@@ -744,6 +769,7 @@ def plot_dos(p):
     '''
     '''
 
+    dos_total_yshift = np.zeros((p.naxes, p.npros), dtype=int)
     for ip in range(p.npdos):
         iax   = p.ax[ip]
         ax    = p.axes[iax]
@@ -761,7 +787,10 @@ def plot_dos(p):
             sign = 1 if ispin == 0 else -1
             y *= p.scale[ip]
             y += sign * p.yshift[ip]
-            x = x + p.xshift[ip] - p.zero[iax]
+            x = x + p.xshift[ip] - p.zero[pid]
+
+            if dos_total_yshift[iax, pid] < p.yshift[ip]:
+                dos_total_yshift[iax, pid] += p.yshift[ip]
 
             line, im = gradient_fill(
                            x, y[ispin], ax=ax,
@@ -783,10 +812,11 @@ def plot_dos(p):
         if p.tdos[ip] and (not show_total_dos[iax, pid]):
             xt, yt = pro.get_total_dos()
 
-        for ispin in range(pro.get_nspin()):
-            sign = 1 if ispin == 0 else -1
-            xt -= p.zero[iax]
-            if p.tdos[ip] and (not show_total_dos[iax, pid]):
+            for ispin in range(pro.get_nspin()):
+                sign = 1 if ispin == 0 else -1
+                xt -= p.zero[pid]
+                yt += dos_total_yshift[iax, pid] * sign
+
                 show_total_dos[iax, pid] = True
                 line, im = gradient_fill(
                                xt, yt[ispin], ax=ax,
@@ -803,7 +833,7 @@ def plot_dos(p):
             for ip in range(len(p.procars)):
                 pro = p.procars[ip]
                 xt, yt = pro.get_total_dos()
-                xt -= p.zero[iax]
+                xt -= p.zero[pid]
                 for ispin in range(pro.get_nspin()):
                     sign = 1 if ispin == 0 else -1
                     line, im = gradient_fill(
