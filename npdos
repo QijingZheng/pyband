@@ -454,8 +454,6 @@ def init_fig(args):
                     transform=ax.transAxes
                     )
 
-
-
     if not args.notight:
         fig.tight_layout(pad=args.pad, h_pad=args.hpad, w_pad=args.wpad)
     fig.set_dpi(args.dpi)
