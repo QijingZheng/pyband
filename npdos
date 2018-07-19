@@ -686,12 +686,12 @@ def process_dos_args(p):
     nr = p.nrows
     nc = p.ncols
 
+    if p.inp == []:
+        p.inp = ['PROCAR']
+
     p.naxes = nr * nc
     p.npros = len(p.inp)
     p.npdos = len(p.pdos)
-
-    if p.inp == []:
-        p.inp = ['PROCAR']
 
     p.pdos = pdosAtomsIndex(p.pdos)
 
@@ -741,7 +741,7 @@ def parse_cml_arg(inp):
 
     return args
 
-def init_dos(p):
+def init_procar(p):
     '''
     '''
     # processing pdos
@@ -879,7 +879,7 @@ def main(cml):
         print "Figure Initialization Completed! Time Used: {:.2f} [sec]".format(t1 - t0)
 
     # dos initialization
-    p = init_dos(p)
+    p = init_procar(p)
     t2 = time()
     if not p.quiet:
         print "PROCAR Initialization Completed! Time Used: {:.2f} [sec]".format(t2 - t1)
