@@ -508,7 +508,7 @@ def parse_figure_args():
                      help='Xlabel font size.')
     par.add_argument('-ylabsize', action='store', dest='ylabsize',
                      default=None,
-                     help='Xlabel font size.')
+                     help='Ylabel font size.')
     par.add_argument('-xticklabsize',   action='store', dest='xticklabsize',
                      default='small',
                      help='Xtick label font size.')
@@ -716,8 +716,8 @@ def process_dos_args(p):
     p.tdos_lc    += ['k']      * (p.npdos - len(p.tdos_lc))
     p.tdos_lab   += ['total']  * (p.npdos - len(p.tdos_lab))
 
-    p.xlim   += [(-6, 6)]      * (p.naxes - len(p.xlim))
-    p.ylim   += [(None,None)]  * (p.naxes - len(p.ylim))
+    p.xlim += [(-6, 6)]     * (p.naxes - len(p.xlim))
+    p.ylim += [(None,None)] * (p.naxes - len(p.ylim))
     p.legendLoc       += ['upper right'] * (p.naxes - len(p.legendLoc))
     p.legendNcols     += [1]             * (p.naxes - len(p.legendNcols))
     p.legendFontsize  += ['small']       * (p.naxes - len(p.legendFontsize))
@@ -788,7 +788,7 @@ def plot_dos(p):
             x = x + p.xshift[ip] - p.zero[pid]
 
             if dos_total_yshift[iax, pid] < p.yshift[ip]:
-                dos_total_yshift[iax, pid] += p.yshift[ip]
+                dos_total_yshift[iax, pid] = p.yshift[ip]
 
             line, im = gradient_fill(
                            x, y[ispin], ax=ax,
@@ -828,8 +828,7 @@ def plot_dos(p):
     if p.npdos == 0:
         for iax in range(p.naxes):
             ax = p.axes[iax]
-            for ip in range(len(p.procars)):
-                pro = p.procars[ip]
+            for pid, pro in enumerate(p.procars):
                 xt, yt = pro.get_total_dos()
                 xt -= p.zero[pid]
                 for ispin in range(pro.get_nspin()):
