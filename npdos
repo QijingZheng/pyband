@@ -576,6 +576,10 @@ def parse_pdos_arg():
     par.add_argument('-p', '-pdos',  action='append', dest='pdos',  type=str,
                      default=[],
                      help='Atom indices for dos projection')
+    par.add_argument('-pv', '-visible',  action='append', dest='pvisible',
+                     type=str2bool,
+                     default=[],
+                     help='PDOS visible?')
     par.add_argument('-k', '-kpts',  action='append', dest='kpts',  type=str,
                      default=[],
                      help='k-points indices for dos projection')
@@ -694,11 +698,12 @@ def process_dos_args(p):
     p.pdos = pdosAtomsIndex(p.pdos)
 
     # setting default parameters for dos plot
-    p.inp    += ['PROCAR'] * (p.npdos - len(p.inp))
-    p.tdos   += [True]     * (p.npdos - len(p.tdos))
-    p.ax     += [0]        * (p.npdos - len(p.ax ))
-    p.kpts   += [':']      * (p.npdos - len(p.kpts))
-    p.spd    += [':']      * (p.npdos - len(p.spd))
+    p.inp      += ['PROCAR'] * (p.npdos - len(p.inp))
+    p.tdos     += [True]     * (p.npdos - len(p.tdos))
+    p.ax       += [0]        * (p.npdos - len(p.ax ))
+    p.kpts     += [':']      * (p.npdos - len(p.kpts))
+    p.spd      += [':']      * (p.npdos - len(p.spd))
+    p.pvisible += [True]     * (p.npdos - len(p.pvisible))
 
     p.soc    += [False]    * (p.npros - len(p.soc))
     p.sigma  += [0.05]     * (p.npros - len(p.sigma))
@@ -781,23 +786,24 @@ def plot_dos(p):
 
         x, y  = pro.get_pdos(atoms=atoms, kpts=kpts, spd=spd)
 
-        for ispin in range(pro.get_nspin()):
-            sign = 1 if ispin == 0 else -1
-            y *= p.scale[ip]
-            y += sign * p.yshift[ip]
-            x = x + p.xshift[ip] - p.zero[pid]
+        if p.pvisible[ip]:
+            for ispin in range(pro.get_nspin()):
+                sign = 1 if ispin == 0 else -1
+                y *= p.scale[ip]
+                y += sign * p.yshift[ip]
+                x = x + p.xshift[ip] - p.zero[pid]
 
-            if dos_total_yshift[iax, pid] < p.yshift[ip]:
-                dos_total_yshift[iax, pid] = p.yshift[ip]
+                if dos_total_yshift[iax, pid] < p.yshift[ip]:
+                    dos_total_yshift[iax, pid] = p.yshift[ip]
 
-            line, im = gradient_fill(
-                           x, y[ispin], ax=ax,
-                           direction=sign,
-                           lw=p.linewidths[ip],
-                           alpha=0.8,
-                           color=p.linecolors[ip],
-                           label=p.label[ip]
-                       )
+                line, im = gradient_fill(
+                               x, y[ispin], ax=ax,
+                               direction=sign,
+                               lw=p.linewidths[ip],
+                               alpha=0.8,
+                               color=p.linecolors[ip],
+                               label=p.label[ip]
+                           )
 
     show_total_dos = np.zeros((p.naxes, p.npros), dtype=bool)
     for ip in range(p.npdos):
