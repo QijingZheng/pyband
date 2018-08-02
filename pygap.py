@@ -56,12 +56,14 @@ def get_bandinfo_from_outcar(inf='OUTCAR'):
 
     return Efermi, bands, vkpts
 
-def find_band_info(inf='OUTCAR', ratio=0.2):
+def find_band_info(inf='OUTCAR', ratio=0.2, zero=None):
     '''
     Find the band information, e.g. VBM and CBM indexes etc.
     '''
 
     efermi, bands, vkpts = get_bandinfo_from_outcar(inf)
+    if zero is not None:
+        efermi = zero
     nspin, nkpts, nbands = bands.shape
 
     band_index = np.arange(nbands, dtype=int)
@@ -245,6 +247,10 @@ def command_line_arg():
             action='store', type="float",
             dest='ratio', default=0.2,
             help='')
+    par.add_option('-z', '--zero',
+            action='store', type="float",
+            dest='zero', default=None,
+            help='')
 
     return  par.parse_args( )
 
@@ -259,4 +265,4 @@ if __name__ == '__main__':
     for inf in args:
         if os.path.isfile(inf):
             print inf, "->"
-            find_band_info(inf, opts.ratio)
+            find_band_info(inf, opts.ratio, opts.zero)
