@@ -664,7 +664,7 @@ def pdosAtomsIndex(ind):
             if ':' in tmp[0]:
                 AtomInd.append(tmp[0])
             else:
-                AtomInd.append(int(tmp[0]))
+                AtomInd.append([int(tmp[0])])
         else:
             tmp_s_ind = []
             for ss in tmp:
