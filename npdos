@@ -784,9 +784,9 @@ def plot_dos(p):
         pid   = p.pIDs[ip]
         pro   = p.procars[pid]
 
-        x, y  = pro.get_pdos(atoms=atoms, kpts=kpts, spd=spd)
-
         if p.pvisible[ip]:
+            x, y  = pro.get_pdos(atoms=atoms, kpts=kpts, spd=spd)
+
             for ispin in range(pro.get_nspin()):
                 sign = 1 if ispin == 0 else -1
                 y *= p.scale[ip]
