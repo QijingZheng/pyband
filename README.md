@@ -94,8 +94,8 @@ npdos -nr 2 -f 4.8 4.0 \
     -z 3.3129 -z 3.3726 -z 3.5583 -z 3.6332 \
     -panelloc 0.01 0.95 \
     -q  
-
 ```
 
 The resulting figure:
+
 ![npdos_example](examples/dos_p5.png)
