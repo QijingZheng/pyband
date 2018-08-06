@@ -98,4 +98,4 @@ npdos -nr 2 -f 4.8 4.0 \
 ```
 
 The resulting figure:
-![npdos_example](examples/dos_p4.png)
+![npdos_example](examples/dos_p5.png)
