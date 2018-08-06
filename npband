@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import re
 import sys
+import re
 import numpy as np
 import argparse
 from collections import Iterable
@@ -13,16 +12,9 @@ mpl.use('agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
+from ase.io import read, write
 
-import matplotlib.colors as mcolors
-from matplotlib.patches import Polygon
 ############################################################
-def gaussian_smearing_org(x, x0, sigma=0.05):
-    '''
-    Gaussian smearing of a Delta function.
-    '''
-
-    return 1. / (np.sqrt(2*np.pi) * sigma) * np.exp(-(x - x0)**2 / (2*sigma**2))
 
 def string2index(string):
     if ':' not in string:
@@ -35,63 +27,6 @@ def string2index(string):
             i.append(int(s))
     i += (3 - len(i)) * [None]
     return slice(*i)
-
-def gradient_fill(x, y, fill_color=None, ax=None, direction=1, **kwargs):
-    """
-    Plot a line with a linear alpha gradient filled beneath it.
-
-    Parameters
-    ----------
-    x, y : array-like
-        The data values of the line.
-    fill_color : a matplotlib color specifier (string, tuple) or None
-        The color for the fill. If None, the color of the line will be used.
-    ax : a matplotlib Axes instance
-        The axes to plot on. If None, the current pyplot axes will be used.
-    Additional arguments are passed on to matplotlib's ``plot`` function.
-
-    Returns
-    -------
-    line : a Line2D instance
-        The line plotted.
-    im : an AxesImage instance
-        The transparent gradient clipped to just the area beneath the curve.
-    """
-
-
-    line, = ax.plot(x, y, **kwargs)
-    if fill_color is None:
-        fill_color = line.get_color()
-
-    # print fill_color
-    zorder = line.get_zorder()
-    alpha = line.get_alpha()
-    alpha = 1.0 if alpha is None else alpha
-
-    z = np.empty((100, 1, 4), dtype=float)
-    rgb = mcolors.colorConverter.to_rgb(fill_color)
-    z[:,:,:3] = rgb
-    if direction == 1:
-        z[:,:,-1] = np.linspace(0, alpha, 100)[:,None]
-    else:
-        z[:,:,-1] = np.linspace(alpha, 0, 100)[:,None]
-
-    xmin, xmax, ymin, ymax = x.min(), x.max(), y.min(), y.max()
-    im = ax.imshow(z, aspect='auto', extent=[xmin, xmax, ymin, ymax],
-                   origin='lower', zorder=zorder)
-
-    xy = np.column_stack([x, y])
-    if direction == 1:
-        xy = np.vstack([[xmin, ymin], xy, [xmax, ymin], [xmin, ymin]])
-    else:
-        xy = np.vstack([[xmin, ymax], xy, [xmax, ymax], [xmin, ymax]])
-    clip_path = Polygon(xy, lw=0.0, facecolor='none', edgecolor='none', closed=True)
-    ax.add_patch(clip_path)
-    im.set_clip_path(clip_path)
-
-    ax.autoscale(True)
-
-    return line, im
 
 ############################################################
 class procar(object):
@@ -500,67 +435,67 @@ class procar(object):
 
 ############################################################
 
-def init_fig(args):
+def init_fig(p):
     '''
     matplotlib figure initialization
     '''
 
-    plt.style.use(args.style)
+    plt.style.use(p.style)
     # do NOT use unicode minus
     mpl.rcParams['axes.unicode_minus'] = False
-    fig, axes = plt.subplots(nrows=args.nrows, ncols=args.ncols,
-                             sharex=args.sharex,
-                             sharey=args.sharey)
-    fig.set_size_inches(args.figsize)
+    fig, axes = plt.subplots(nrows=p.nrows, ncols=p.ncols,
+                             sharex=p.sharex,
+                             sharey=p.sharey)
+    fig.set_size_inches(p.figsize)
     plt.subplots_adjust(
-            left=args.fleft, right=args.fright,
-            bottom=args.fbottom, top=args.ftop,
-            wspace=args.wspace, hspace=args.hspace)
+            left=p.fleft, right=p.fright,
+            bottom=p.fbottom, top=p.ftop,
+            wspace=p.wspace, hspace=p.hspace)
 
-    axes = [axes] if (args.ncols * args.nrows == 1) else axes.flatten()
+    axes = [axes] if (p.ncols * p.nrows == 1) else axes.flatten()
     for ii, ax in enumerate(axes):
-        if args.sharex or args.sharey:
-            ir = ii // args.ncols           # row index of axes
-            ic = ii - ir * args.ncols       # col index of axes
+        if p.sharex or p.sharey:
+            ir = ii // p.ncols           # row index of axes
+            ic = ii - ir * p.ncols       # col index of axes
             if ic == 0:                     # left-most col has ylabel
-                ax.set_ylabel('DOS [arb. units]', fontsize=args.ylabsize,
-                        labelpad=args.ylabpad)
-            if ir == args.nrows - 1:        # bottom row has ylabel
-                ax.set_xlabel('Energy [eV]', fontsize=args.xlabsize,
-                        labelpad=args.ylabpad)
+                ax.set_ylabel('DOS [arb. units]', fontsize=p.ylabsize,
+                        labelpad=p.ylabpad)
+            if ir == p.nrows - 1:        # bottom row has ylabel
+                ax.set_xlabel('Energy [eV]', fontsize=p.xlabsize,
+                        labelpad=p.ylabpad)
         else:
-            ax.set_xlabel('Energy [eV]', fontsize=args.xlabsize,
-                        labelpad=args.xlabpad)
-            ax.set_ylabel('DOS [arb. units]', fontsize=args.ylabsize,
-                        labelpad=args.xlabpad)
+            ax.set_xlabel('Energy [eV]', fontsize=p.xlabsize,
+                        labelpad=p.xlabpad)
+            ax.set_ylabel('DOS [arb. units]', fontsize=p.ylabsize,
+                        labelpad=p.xlabpad)
 
         # Number of minor ticks
-        ax.xaxis.set_minor_locator(AutoMinorLocator(n=args.nxminor if
-                                   args.nxminor else args.nminor))
-        ax.yaxis.set_minor_locator(AutoMinorLocator(n=args.nyminor if
-                                   args.nyminor else args.nminor))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(n=p.nxminor if
+                                   p.nxminor else p.nminor))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(n=p.nyminor if
+                                   p.nyminor else p.nminor))
         # ticklabel font size
-        ax.tick_params(axis='x', labelsize=args.xticklabsize)
-        ax.tick_params(axis='y', labelsize=args.yticklabsize)
+        ax.tick_params(axis='x', labelsize=p.xticklabsize)
+        ax.tick_params(axis='y', labelsize=p.yticklabsize)
         
-        if args.showpanel:
-            x, y = args.panelloc
+        if p.showpanel:
+            x, y = p.panelloc
             ax.text(x, y, '({})'.format(chr(97 + ii)),
-                    ha=args.panelha,
-                    va=args.panelva,
+                    ha=p.panelha,
+                    va=p.panelva,
                     family='monospace',
-                    fontsize=args.panelfontsize,
+                    fontsize=p.panelfontsize,
                     transform=ax.transAxes
                     )
 
-    if not args.notight:
-        fig.tight_layout(pad=args.pad, h_pad=args.hpad, w_pad=args.wpad)
-    fig.set_dpi(args.dpi)
+    if not p.notight:
+        fig.tight_layout(pad=p.pad, h_pad=p.hpad, w_pad=p.wpad)
+    fig.set_dpi(p.dpi)
 
-    args.fig  = fig
-    args.axes = axes
+    p.fig  = fig
+    p.axes = axes
 
-    return args
+    return p
 
 def parse_figure_args():
     '''
