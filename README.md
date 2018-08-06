@@ -77,7 +77,7 @@ limits of the plot, `-z` is followed by the energy reference of the plot.
 
 ## npdos
 
-This script can plot PDOS from multiple VASP `PROCAR`s in multiple axes, example usages:
+This script can plot PDOS from multiple VASP `PROCARs` in multiple axes, example usages:
 
 ```bash
 
