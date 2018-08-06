@@ -128,7 +128,7 @@ def get_bandInfo(inFile = 'OUTCAR'):
 
         # get boundaries of band path
         xx = np.diff(kpt_path)
-        kpt_bounds = np.concatenate(([0.0,], kpt_path[np.isclose(xx, 0.0)], [kpt_path[-1],]))
+        kpt_bounds = np.concatenate(([0.0,], kpt_path[1:][np.isclose(xx, 0.0)], [kpt_path[-1],]))
 
     return kpt_path, bands, Efermi, kpt_bounds
 
