@@ -77,30 +77,25 @@ limits of the plot, `-z` is followed by the energy reference of the plot.
 
 ## npdos
 
-This script can plot PDOS from multiple VASP `PROCAR`s, example usages:
+This script can plot PDOS from multiple VASP `PROCAR`s in multiple axes, example usages:
+
 ```bash
 
 #!/bin/bash
 
-# npdos \
-#     -i 00/PROCAR -p "1:3"  -l x1 -yshift 10 \
-#     -i 01/PROCAR -p "1:3"  -l x2 -yshift 20 \
-#     -i 02/PROCAR -p "1:3"  -l x3 -yshift 30 \
-#     -i 03/PROCAR -p "1:3"  -l x4 -yshift 40 \
-
-# npdos \
-#     -nr 2 -nc 1 -f 6 4.0              \
-#     -a 0 -i 00/PROCAR -p "0:3"  -l x1 -xshift  1.0\
-#     -a 0 -i 01/PROCAR -p "3:6"  -l x2 -xshift  1.0\
-#     -a 1 -i 02/PROCAR -p "0:3"  -l x3 -xshift -0.0\
-#     -a 1 -i 03/PROCAR -p "3:6"  -l x4 -xshift -0.0\
-
-npdos \
-    -nr 2 -nc 1 -f 4.8 4.0  -sharex \
-    -a 0 -i 00/PROCAR -p "0:3"  -x -3 3 -l x1 -xshift  1.0 \
-    -a 0 -i 00/PROCAR -p "3:6"  -l x2 -xshift  1.0 \
-    -a 1 -i 00/PROCAR -p "0:3"  -x -4 4 -l x3 -xshift -0.0 \
-    -a 1 -i 00/PROCAR -p "3:6"  -l x4 -xshift -0.0 \
+npdos -nr 2 -f 4.8 4.0 \
+    -o g1.png \
+    -nxminor 4 \ 
+    -i pbe/scf/PROCAR         -a 0 -p 0 -pv n -tlab 'PBE-PBE' -tlw 0.5 -tlc r \ 
+    -i scf-pbe_opt-hse/PROCAR -a 0 -p 0 -pv n -tlab 'HSE-PBE' -tlw 0.5 -tlc b \ 
+    -i scf-hse_opt-pbe/PROCAR -a 1 -p 0 -pv n -tlab 'PBE-HSE' -tlw 0.5 -tlc r \ 
+    -i hse/scf/PROCAR         -a 1 -p 0 -pv n -tlab 'HSE-HSE' -tlw 0.5 -tlc b \ 
+    -x -4 6 -x -6 6 \ 
+    -z 3.3129 -z 3.3726 -z 3.5583 -z 3.6332 \
+    -panelloc 0.01 0.95 \
+    -q  
 
 ```
 
+The resulting figure:
+![npdos_example](examples/dos_p4.png)
