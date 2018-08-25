@@ -75,7 +75,11 @@ def get_bandInfo(inFile = 'OUTCAR'):
             # break
 
     # basis vector of reciprocal lattice
-    B = np.array([line.split()[3:] for line in outcar[ibasis:ibasis+3]], 
+    # B = np.array([line.split()[3:] for line in outcar[ibasis:ibasis+3]], 
+
+    # When the supercell is too large, spaces are missing between real space
+    # lattice constants. A bug found out by Wei Xie (weixie4@gmail.com).
+    B = np.array([line.split()[-3:] for line in outcar[ibasis:ibasis+3]], 
                  dtype=float)
     # k-points vectors and weights
     tmp = np.array([line.split() for line in outcar[Lvkpts:Lvkpts+nkpts]],
@@ -101,7 +105,7 @@ def get_bandInfo(inFile = 'OUTCAR'):
         kp = open('KPOINTS').readlines()
 
     if os.path.isfile('KPOINTS') and kp[2][0].upper() == 'L':
-        Nk_in_seg = int(kp[1].strip())
+        Nk_in_seg = int(kp[1].split()[0])
         Nseg = nkpts // Nk_in_seg
         vkpt_diff = np.zeros_like(vkpts, dtype=float)
         
