@@ -889,7 +889,8 @@ def plot_dos(p):
                 sign = 1 if ispin == 0 else -1
                 y *= p.scale[ip]
                 y += sign * p.yshift[ip]
-                x = x + p.xshift[ip] - p.zero[pid]
+                if ispin == 0:
+                    x = x + p.xshift[ip] - p.zero[pid]
 
                 if dos_total_yshift[iax, pid] < p.yshift[ip]:
                     dos_total_yshift[iax, pid] = p.yshift[ip]
@@ -916,7 +917,8 @@ def plot_dos(p):
 
             for ispin in range(pro.get_nspin()):
                 sign = 1 if ispin == 0 else -1
-                xt -= p.zero[pid]
+                if ispin == 0:
+                    xt -= p.zero[pid]
                 yt += dos_total_yshift[iax, pid] * sign
 
                 show_total_dos[iax, pid] = True
@@ -934,7 +936,8 @@ def plot_dos(p):
             ax = p.axes[iax]
             for pid, pro in enumerate(p.procars):
                 xt, yt = pro.get_total_dos()
-                xt -= p.zero[pid]
+                if ispin == 0:
+                    xt -= p.zero[pid]
                 for ispin in range(pro.get_nspin()):
                     sign = 1 if ispin == 0 else -1
                     line, im = gradient_fill(
