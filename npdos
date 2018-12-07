@@ -769,7 +769,6 @@ def pdosAtomsIndex(ind):
             for ss in tmp:
                 if ':' in ss:
                     ii = ss.split(":")
-                    print ii
                     assert len(ii) > 1 and len(ii) <= 3, ''
                     start_ind = int(ii[0])
                     end_ind   = int(ii[1])
