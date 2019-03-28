@@ -30,8 +30,8 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
         Weights = np.asarray([line.split()[-1] for line in FileContents
                               if not re.search('[a-zA-Z]', line)], dtype=float)
     
-    nspin = Weights.shape[0] / (nkpts * nbands * nions)
-    nspin /= 4 if lsorbit else 1
+    nspin = Weights.shape[0] // (nkpts * nbands * nions)
+    nspin //= 4 if lsorbit else 1
 
     if lsorbit:
         Weights.resize(nspin, nkpts, nbands, 4, nions)
