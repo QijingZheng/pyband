@@ -100,7 +100,6 @@ The resulting figure:
 
 ![npdos_example](examples/dos_p5.png)
 
-
 ## xcell.py
 
 This script utilize [ASE](https://wiki.fysik.dtu.dk/ase/ase/io/io.html) to make
@@ -113,6 +112,22 @@ desired direction if specified. Examples usage:
 xcell.py -i POSCAR -s 2 2 1 -n Ti O C H -vacuum 15  -ivacuum z -o new.vasp
 ```
 
-In the above example, we are makeing an 2x2x1 supercell based on the cell given
-by `POSCAR`. The element in the supercell are arranged in "Ti O C H" order. In
-addition, we add an vacuum of 15 Angstrom in the z-axis.
+In the above example, we are makeing a 2x2x1 supercell based on the cell given
+by `POSCAR`. The elements in the supercell are arranged in "Ti O C H" order. In
+addition, we add a vacuum of 15 Angstrom in the z-axis. The resulting supercell
+is stored in the file `new.vasp`.
+
+
+## molAdd.py
+
+This script also make use of `ASE` to adsorb molecules onto the slab surface.
+Examples usage:
+
+```
+molAdd.py -m H2O -i POSCAR -a 36 --height 2.0 -rotx 60 -v 15.0 
+```
+
+where we add a H2O molecule above the atom with index 36 (which is the 37th
+atom) by a height of 2.0 Angstrom. In addition, we rotate the molecule around
+x-axis by 60 degrees and add 15.0 Angstrom of vacuum to the slab.  The list of
+available molecules is those from `ase.collection.g2` database.

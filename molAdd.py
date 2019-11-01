@@ -7,53 +7,6 @@ from ase.io import read, write
 from ase.collections import g2
 from ase.build import molecule
 
-def parse_cml_args(cml):
-    '''
-    CML parser.
-    '''
-    arg = argparse.ArgumentParser(add_help=True)
-
-    arg.add_argument('-i', dest='slab', action='store', type=str,
-                     default='POSCAR',
-                     help='The slab onto which the adsorbate should be added.')
-    arg.add_argument('-o', dest='out', action='store', type=str,
-                     default='out.vasp',
-                     help='Default output filename.')
-    arg.add_argument('-m', '--molecule', dest='molecule', action='store', type=str,
-                     choices=g2.names, default=None,
-                     help='The chemical formula of the adsorbed molecule, e.g.  H2O.')
-    arg.add_argument('--height', dest='height', action='store',
-                     type=float, default=1.0, 
-                     help='Height of the the adsorbate above the surface.')
-    arg.add_argument('--mol_index', dest='mol_index', action='store',
-                     type=int, default=0, 
-                     help='Index of the atom in the molecule to be positioned above the adsorbed site.')
-    arg.add_argument('-a', '--atom_index', dest='atom_index', action='store',
-                     type=int, default=0, 
-                     help='Index of the atom onto which the adsorbate should be added.')
-    arg.add_argument('--offset', dest='offset', action='store',
-                     type=float, default=(0.0, 0.0), 
-                     help='Offset the adsorbate.')
-    arg.add_argument('--rotx', dest='rotx', action='store',
-                     type=float, default=None, 
-                     help='Rotation around x-axis.')
-    arg.add_argument('--roty', dest='roty', action='store',
-                     type=float, default=None, 
-                     help='Rotation around y-axis.')
-    arg.add_argument('--rotz', dest='rotz', action='store',
-                     type=float, default=None, 
-                     help='Rotation around z-axis.')
-    arg.add_argument('-v', '--vacuum', dest='vacuum', action='store', type=float,
-                     default=None, 
-                     help='Set new vacuum length.')
-    arg.add_argument('--xvacuum', dest='xvacuum', action='store', type=str,
-                     default='z', choices=['x', 'y', 'z'],
-                     help='Vacuum direction.')
-    arg.add_argument('--no-sort-pos', dest='sort_pos', action='store_false',
-                     help='Sort the coordinates.')
-
-    return arg.parse_args(cml)
-
 def add_mol(cml):
     arg = parse_cml_args(cml)
 
@@ -64,6 +17,22 @@ def add_mol(cml):
     mol.center()
 
     print (' '.join(mol.get_chemical_symbols()))
+
+    if arg.rot:
+        for za in arg.rot:
+            if za[0].lower() in 'xyz':
+                axis = za[0].lower()
+                angle = za[1:]
+            else:
+                axis = 'z'
+                angle = za
+
+            try:
+                angle = float(angle)
+            except:
+                print("Please enter valid rotation parameter, e.g. z90!")
+                raise
+            mol.rotate(angle, axis)
 
     if arg.rotx:
         mol.rotate(arg.rotx, 'x')
@@ -103,6 +72,56 @@ def add_mol(cml):
 
     write(arg.out, new, vasp5=True, direct=True,
           label=open(arg.slab).readline().strip())
+
+def parse_cml_args(cml):
+    '''
+    CML parser.
+    '''
+    arg = argparse.ArgumentParser(add_help=True)
+
+    arg.add_argument('-i', dest='slab', action='store', type=str,
+                     default='POSCAR',
+                     help='The slab onto which the adsorbate should be added.')
+    arg.add_argument('-o', dest='out', action='store', type=str,
+                     default='out.vasp',
+                     help='Default output filename.')
+    arg.add_argument('-m', '--molecule', dest='molecule', action='store', type=str,
+                     choices=g2.names, default=None,
+                     help='The chemical formula of the adsorbed molecule, e.g.  H2O.')
+    arg.add_argument('--height', dest='height', action='store',
+                     type=float, default=1.0, 
+                     help='Height of the the adsorbate above the surface.')
+    arg.add_argument('--mol_index', dest='mol_index', action='store',
+                     type=int, default=0, 
+                     help='Index of the atom in the molecule to be positioned above the adsorbed site.')
+    arg.add_argument('-a', '--atom_index', dest='atom_index', action='store',
+                     type=int, default=0, 
+                     help='Index of the atom onto which the adsorbate should be added.')
+    arg.add_argument('--offset', dest='offset', action='store',
+                     type=float, default=(0.0, 0.0), 
+                     help='Offset the adsorbate.')
+    arg.add_argument('--rot', dest='rot', action='store',
+                     type=str, default=[], nargs='+',
+                     help='Rotate around a specified axis by an angle, e.g.  --rot z90 --- rotate 90 degrees around z-axis.')
+    arg.add_argument('--rotx', dest='rotx', action='store',
+                     type=float, default=None, 
+                     help='Rotation around x-axis.')
+    arg.add_argument('--roty', dest='roty', action='store',
+                     type=float, default=None, 
+                     help='Rotation around y-axis.')
+    arg.add_argument('--rotz', dest='rotz', action='store',
+                     type=float, default=None, 
+                     help='Rotation around z-axis.')
+    arg.add_argument('-v', '--vacuum', dest='vacuum', action='store', type=float,
+                     default=None, 
+                     help='Set new vacuum length.')
+    arg.add_argument('--xvacuum', dest='xvacuum', action='store', type=str,
+                     default='z', choices=['x', 'y', 'z'],
+                     help='Vacuum direction.')
+    arg.add_argument('--no-sort-pos', dest='sort_pos', action='store_false',
+                     help='Sort the coordinates.')
+
+    return arg.parse_args(cml)
 
 if __name__ == '__main__':
     add_mol(sys.argv[1:])
