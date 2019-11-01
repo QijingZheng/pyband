@@ -99,3 +99,20 @@ npdos -nr 2 -f 4.8 4.0 \
 The resulting figure:
 
 ![npdos_example](examples/dos_p5.png)
+
+
+## xcell.py
+
+This script utilize [ASE](https://wiki.fysik.dtu.dk/ase/ase/io/io.html) to make
+supercells. The coordinates of the atoms in the resulting supercell is
+rearranged in the increasing order in the z-axis. It can also rearrange the
+elements in `POSCAR` in the required order. Moreover, vacuum can be added in the
+desired direction if specified. Examples usage:
+
+```
+xcell.py -i POSCAR -s 2 2 1 -n Ti O C H -vacuum 15  -ivacuum z -o new.vasp
+```
+
+In the above example, we are makeing an 2x2x1 supercell based on the cell given
+by `POSCAR`. The element in the supercell are arranged in "Ti O C H" order. In
+addition, we add an vacuum of 15 Angstrom in the z-axis.
