@@ -47,7 +47,15 @@ def add_mol(cml):
 
     # add vacuum 
     if arg.vacuum:
-        new.center(vacuum=arg.vacuum / 2., axis='xyz'.index(arg.xvacuum))
+        if arg.xvacuum == 'a':
+            axis = (0, 1, 2)
+        else:
+            exis = 'xyz'.index(arg.xvacuum)
+        new.center(vacuum=arg.vacuum / 2., axis=axis)
+    else:
+        # By default, center the slab in the z direction and keep the original vacuum
+        # length.
+        new.center(axis=2)
 
     org_atom_index = np.arange(len(new), dtype=int)
 
@@ -116,7 +124,7 @@ def parse_cml_args(cml):
                      default=None, 
                      help='Set new vacuum length.')
     arg.add_argument('--xvacuum', dest='xvacuum', action='store', type=str,
-                     default='z', choices=['x', 'y', 'z'],
+                     default='z', choices=['x', 'y', 'z', 'a'],
                      help='Vacuum direction.')
     arg.add_argument('--no-sort-pos', dest='sort_pos', action='store_false',
                      help='Sort the coordinates.')
