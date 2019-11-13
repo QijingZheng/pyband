@@ -5,8 +5,7 @@ import argparse
 import ase, sys
 import numpy as np
 from ase.io import read, write
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
-
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation 
 
 def init_vel(cml):
     '''
@@ -17,6 +16,8 @@ def init_vel(cml):
     init_pos = read(arg.poscar)
     # set the momenta corresponding to T
     MaxwellBoltzmannDistribution(init_pos, arg.temperature * ase.units.kB)
+    Stationary(init_pos)
+    ZeroRotation(init_pos)
 
     # scale the temperature to T 
     vel = init_pos.get_velocities()
