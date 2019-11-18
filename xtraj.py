@@ -33,7 +33,10 @@ def ase2axsf(trajs, ofile='traj.axsf'):
 def xdatcar2traj(cml):
     arg = parse_cml_args(cml)
 
-    trajs = read(arg.inputFile, index=':')
+    if arg.snaps:
+        trajs = [read(f) for f in arg.snaps]
+    else:
+        trajs = read(arg.inputFile, index=':')
 
     if arg.outFmt == 'xyz':
         write('{}.xyz'.format(arg.outPrefix), trajs)
@@ -57,6 +60,9 @@ def parse_cml_args(cml):
     arg.add_argument('-o', dest='outPrefix', action='store', type=str,
                      default='traj',
                      help='The prefix of the output file.')
+    arg.add_argument('-l', dest='snaps', action='store', type=str,
+                     default=[],
+                     help='List of structure files.')
 
     return arg.parse_args(cml)
 
