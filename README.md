@@ -20,7 +20,7 @@ The default output image name  can be changed by adding `-o
 YourImageName.suffix` to the above command line.  Note that the image format is
 automatically recognized by the script, which can be any format that is
 supported by `matplotlib`. The size of the image can also be speified by `-s
-width height` command line arguments. 
+width height` command line arguments.
 
 The labels of the high-symmetry K-points, which are not shown in the figure, can
 be designate by `-k` flag.
@@ -34,6 +34,14 @@ states, e.g. the contribution of some atom to each KS state, the flag `--occ
 atoms` comes to help.
 
 ```$ pyband --occ '1 3 4'```
+
+or
+
+```$ pyband --occ '1-4'```
+
+or combination
+
+```$ pyband --occ '1-4, 5-6, 7'```
 
 ![band_with_atom_weight](examples/band_with_atoms_weight.png)
 
@@ -49,6 +57,15 @@ The spd-projected weight can also be specefied:
 
 ```$ pyband --occ '1 3 4' --spd '4 5 6 7 8' ```
 
+or
+
+```$ pyband --occ '1 3 4' --spd 'd' ```
+
+or in combination
+
+```$ pyband --occ '1 3 4' --spd 's p d 9-12' ```
+
+
 ![band_with_atom_weight_spd](examples/band_with_atoms_weight_spd.png)
 
 where in the arguments of `--spd`:
@@ -62,10 +79,19 @@ where in the arguments of `--spd`:
 
 More command line arguments can be found by `pyband -h`.
 
+For Mac users, [iterm2](https://iterm2.com/) combined with [imgcat](https://iterm2.com/documentation-shell-integration.html) can be used to show inline image. Just modify the last line from:
+```
+        call(['feh', '-xdF', opts.bandimage])
+```
+to
+```
+        call(['~/.iterm2/imgcat',  opts.bandimage])
+```
+
 ## pydos
 
 This script is used to plot partial density of states (pDOS) from VASP `PROCAR`
-files. 
+files.
 
 `pydos -p '1 3 4' -p '2 7 8' -p '5 6 9' -z 0.65 -x -1 2  -y 0 6`
 
@@ -85,12 +111,12 @@ This script can plot PDOS from multiple VASP `PROCARs` in multiple axes, example
 
 npdos -nr 2 -f 4.8 4.0 \
     -o g1.png \
-    -nxminor 4 \ 
-    -i pbe/scf/PROCAR         -a 0 -p 0 -pv n -tlab 'PBE-PBE' -tlw 0.5 -tlc r \ 
-    -i scf-pbe_opt-hse/PROCAR -a 0 -p 0 -pv n -tlab 'HSE-PBE' -tlw 0.5 -tlc b \ 
-    -i scf-hse_opt-pbe/PROCAR -a 1 -p 0 -pv n -tlab 'PBE-HSE' -tlw 0.5 -tlc r \ 
-    -i hse/scf/PROCAR         -a 1 -p 0 -pv n -tlab 'HSE-HSE' -tlw 0.5 -tlc b \ 
-    -x -4 6 -x -6 6 \ 
+    -nxminor 4 \
+    -i pbe/scf/PROCAR         -a 0 -p 0 -pv n -tlab 'PBE-PBE' -tlw 0.5 -tlc r \
+    -i scf-pbe_opt-hse/PROCAR -a 0 -p 0 -pv n -tlab 'HSE-PBE' -tlw 0.5 -tlc b \
+    -i scf-hse_opt-pbe/PROCAR -a 1 -p 0 -pv n -tlab 'PBE-HSE' -tlw 0.5 -tlc r \
+    -i hse/scf/PROCAR         -a 1 -p 0 -pv n -tlab 'HSE-HSE' -tlw 0.5 -tlc b \
+    -x -4 6 -x -6 6 \
     -z 3.3129 -z 3.3726 -z 3.5583 -z 3.6332 \
     -panelloc 0.01 0.95 \
     -q  
@@ -124,7 +150,7 @@ This script also make use of `ASE` to adsorb molecules onto the slab surface.
 Examples usage:
 
 ```
-molAdd.py -m H2O -i POSCAR -a 36 --height 2.0 -rotx 60 -v 15.0 
+molAdd.py -m H2O -i POSCAR -a 36 --height 2.0 -rotx 60 -v 15.0
 ```
 
 where we add a H2O molecule above the atom with index 36 (which is the 37th
