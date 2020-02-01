@@ -308,7 +308,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
     plt.savefig(opts.bandimage, dpi=opts.dpi)
 
 ############################################################
-def saveband_dat(kpath, bands):
+def saveband_dat(kpath, bands, opts, whts=None):
     '''
     save band info to txt files
     '''
@@ -318,22 +318,67 @@ def saveband_dat(kpath, bands):
 
     if nspin == 1:
         with open(prefix + '.dat', 'w') as out:
+            #line = "kpts      energy      [projection weight]"
             for ii in range(nkpts):
-                line = '%8.4f ' % kpath[ii]
+                line = ''
                 for jj in range(nbands):
+                    line = ''
+                    line += '%8.4f ' % kpath[ii]
                     line += '%10.4f' % bands[0,ii,jj]
-                line += '\n'
+                    line += '\n'
+                    out.write(line)
+                line = '\n'
                 out.write(line)
+            line = '\n'
+            out.write(line)
+            if opts.occ:
+                for kk in range(len(opts.occ)):
+                    for ii in range(nkpts):
+                        line = ''
+                        for jj in range(nbands):
+                            line = ''
+                            line += '%8.4f ' % kpath[ii]
+                            line += '%10.4f ' % bands[0,ii,jj]
+                            line += '%10.4f' % whts[kk][0,ii,jj]
+                            line += '\n'
+                            out.write(line)
+                        line = '\n'
+                        out.write(line)
+                    line = '\n'
+                    out.write(line)
+
     else:
         for Ispin in range(nspin):
             filename = prefix + '_' + spinSuffix[Ispin] + '.dat'
             with open(filename, 'w') as out:
+                #line = "kpts      energy      [projection weight]"
                 for ii in range(nkpts):
-                    line = '%10.4f ' % kpath[ii]
+                    line = ''
                     for jj in range(nbands):
-                        line += '%8.4f' % bands[Ispin,ii,jj]
-                    line += '\n'
+                        line = ''
+                        line += '%8.4f ' % kpath[ii]
+                        line += '%10.4f' % bands[Ispin,ii,jj]
+                        line += '\n'
+                        out.write(line)
+                    line = '\n'
                     out.write(line)
+                line = '\n'
+                out.write(line)
+                if opts.occ:
+                    for kk in range(len(opts.occ)):
+                        for ii in range(nkpts):
+                            line = ''
+                            for jj in range(nbands):
+                                line = ''
+                                line += '%8.4f ' % kpath[ii]
+                                line += '%10.4f' % bands[Ispin,ii,jj]
+                                line += '%10.4f' % whts[kk][Ispin,ii,jj]
+                                line += '\n'
+                                out.write(line)
+                            line = '\n'
+                            out.write(line)
+                        line = '\n'
+                        out.write(line)
 
 ############################################################
 def command_line_arg():
@@ -529,7 +574,7 @@ if __name__ == '__main__':
     mpl.rcParams['axes.unicode_minus'] = False
 
     bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
-    saveband_dat(kpath, bands)
+    saveband_dat(kpath, bands,opts,whts)
 
     if not opts.quiet:
         from subprocess import call
