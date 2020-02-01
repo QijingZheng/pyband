@@ -79,7 +79,7 @@ where in the arguments of `--spd`:
 
 More command line arguments can be found by `pyband -h`.
 
-For Mac users, [iterm2](https://iterm2.com/) combined with [imgcat](https://iterm2.com/documentation-shell-integration.html) can be used to show inline image. Just modify the last line from:
+For Mac users, [iterm2](https://iterm2.com/) combined with [imgcat](https://iterm2.com/documentation-shell-integration.html) can be used to show inline images. Just modify the last line from:
 ```
         call(['feh', '-xdF', opts.bandimage])
 ```
@@ -87,6 +87,14 @@ to
 ```
         call(['~/.iterm2/imgcat',  opts.bandimage])
 ```
+
+more example:
+
+`pyband --occ '3 4' --spd '1' --occMc 'red' --occ '3-4' --spd '2-3' --occMc 'blue'`
+
+![band_example_1](examples/band_example.png)
+
+
 
 ## pydos
 

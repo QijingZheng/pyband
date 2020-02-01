@@ -482,7 +482,7 @@ def command_line_arg():
 
     par.add_option('--spd',
             action='append', type="string", dest='spdProjections',
-            default=None,
+            default=[],
             help='Spd-projected wavefunction character of each KS orbital.')
 
     par.add_option('--lsorbit',
@@ -517,6 +517,7 @@ if __name__ == '__main__':
         opts.occMarkerSize = occMs
 
         whts = []
+        iterater = 0
         for occ in opts.occ:
             # CCX 2020-01-31 prase input range of atoms
             occTmp = praseAtoms(occ)
@@ -540,7 +541,7 @@ if __name__ == '__main__':
                     print "number of projections does not match number of occupations"
                     sys.exit(0)
                 # set angall to corresponding item of spdProjections
-                angall = opts.spdProjections[opts.occ.index(occ)]
+                angall = opts.spdProjections[iterater]
                 # praser input spd information
                 angTmp = prasespds(angall)
                 angularM = list(set(angTmp))
@@ -552,6 +553,8 @@ if __name__ == '__main__':
             else:
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
                     lsorbit=opts.lsorbit))
+            iterater += 1
+    
     else:
         # if opts.spdProjections:
         #     angularM = [int(x) for x in opts.spdProjections.split()]
