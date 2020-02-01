@@ -9,15 +9,67 @@ from optparse import OptionParser
 __version__ = "1.0"
 ############################################################
 
-# CCX 2020-01-31 customize praser
+# CCX 2020-01-31 range praser
 def parseList(string):
     m = re.match(r'(\d+)(?:-(\d+))?$', string)
-    # ^ (or use .split('-'). anyway you like.)
     if not m:
         raise ArgumentTypeError("'" + string + "' is not a range of number. Expected forms like '0-5' or '2'.")
     start = m.group(1)
     end = m.group(2) or start
     return list(range(int(start,10), int(end,10)+1))
+
+# CCX 2020-02-01 customize praser
+def praseAtoms(occ):
+    occTmp = []
+    if len(occ.split()) != 1:
+        for occ_bak in occ.split():
+            if '-' in occ_bak:
+                occTmp += parseList(occ_bak)
+            else:
+                occTmp += [int(i) for i in occ_bak.split()]
+    else:
+        occ_bak = occ
+        if '-' in occ_bak:
+            occTmp += parseList(occ_bak)
+        else:
+            occTmp += [int(i) for i in occ_bak.split()]
+    return occTmp
+
+def prasespds(angall):
+    angTmp = []
+    if len(angall.split()) != 1:
+        for ang in angall.split():
+            # for range
+            if '-' in ang:
+                angTmp += parseList(ang)
+            # for s p d preset
+            elif ang == 's':
+                angTmp += [0]
+            elif ang == 'p':
+                angTmp += [1,2,3]
+            elif ang == 'd':
+                angTmp += [4,5,6,7,8]
+            elif ang == 'f':
+                angTmp += [9,10,11,12,13,14,15]
+            else:
+                angTmp += [int(i) for i in ang.split()]
+    else:
+        ang = angall
+        # for range
+        if '-' in ang:
+            angTmp += parseList(ang)
+        # for s p d preset
+        elif ang == 's':
+            angTmp += [0]
+        elif ang == 'p':
+            angTmp += [1,2,3]
+        elif ang == 'd':
+            angTmp += [4,5,6,7,8]
+        elif ang == 'f':
+            angTmp += [9,10,11,12,13,14,15]
+        else:
+            angTmp += [int(i) for i in ang.split()]
+    return angTmp
 
 
 def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
@@ -420,21 +472,9 @@ if __name__ == '__main__':
         opts.occMarkerSize = occMs
 
         whts = []
-        occTmp = []
         for occ in opts.occ:
-            # CCX 2020-01-31 prase atoms with -
-            if len(occ.split()) != 1:
-                for occ_bak in occ.split():
-                    if '-' in occ_bak:
-                        occTmp += parseList(occ_bak)
-                    else:
-                        occTmp += [int(i) for i in occ_bak.split()]
-            else:
-                occ_bak = occ
-                if '-' in occ_bak:
-                    occTmp += parseList(occ_bak)
-                else:
-                    occTmp += [int(i) for i in occ_bak.split()]
+            # CCX 2020-01-31 prase input range of atoms
+            occTmp = praseAtoms(occ)
             occAtom = set(occTmp)
 
             #alist = np.array(occ.split(), dtype=int)
@@ -447,46 +487,20 @@ if __name__ == '__main__':
 
             # occAtom = [int(x) for x in opts.occ.split()]
             # whts = WeightFromPro(opts.procar, whichAtom = occAtom)
-            if opts.spdProjections and (Nocc == 1):
-                # CCX 2020-01-31 prase spd
-                angTmp = []
-                for angall in opts.spdProjections:
-                    if len(angall.split()) != 1:
-                        for ang in angall.split():
-                            # for range
-                            if '-' in ang:
-                                angTmp += parseList(ang)
-                            # for s p d preset
-                            elif ang == 's':
-                                angTmp += [0]
-                            elif ang == 'p':
-                                angTmp += [1,2,3]
-                            elif ang == 'd':
-                                angTmp += [4,5,6,7,8]
-                            elif ang == 'f':
-                                angTmp += [9,10,11,12,13,14,15]
-                            else:
-                                angTmp += [int(i) for i in ang.split()]
-                    else:
-                        ang = angall
-                        # for range
-                        if '-' in ang:
-                            angTmp += parseList(ang)
-                        # for s p d preset
-                        elif ang == 's':
-                            angTmp += [0]
-                        elif ang == 'p':
-                            angTmp += [1,2,3]
-                        elif ang == 'd':
-                            angTmp += [4,5,6,7,8]
-                        elif ang == 'f':
-                            angTmp += [9,10,11,12,13,14,15]
-                        else:
-                            angTmp += [int(i) for i in ang.split()]
 
-
+            # CCX 2020-01-31 prase spd for specific list of atoms `occ` in `opts.occ`
+            if opts.spdProjections:# and (Nocc == 1):
+                # CCX 2020-02-01 check len(occ) == len(spd)?
+                if len(opts.spdProjections) != len(opts.occ):
+                    print "number of projections does not match number of occupations"
+                    sys.exit(0)
+                # set angall to corresponding item of spdProjections
+                angall = opts.spdProjections[opts.occ.index(occ)]
+                # praser input spd information
+                angTmp = prasespds(angall)
                 angularM = list(set(angTmp))
-                    #angularM = [int(x) for x in opts.spdProjections.split()]
+
+                #angularM = [int(x) for x in opts.spdProjections.split()]
                 # print angularM
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
                     spd=angularM, lsorbit=opts.lsorbit))
