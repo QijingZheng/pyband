@@ -12,7 +12,9 @@ When no argument is given, `pyband` reads in `OUTCAR` (optionally `KPOINTS`)
 and find the band information within. It then plots the resulting band structure
 and save it as `band.png`.
 
-```$ pyband```
+```shell
+$ pyband
+```
 
 ![band_with_no_args](examples/band_no_args.png)
 
@@ -25,7 +27,9 @@ width height` command line arguments.
 The labels of the high-symmetry K-points, which are not shown in the figure, can
 be designate by `-k` flag.
 
-```$ pyband -k mgkm```
+```shell
+$ pyband -k mgkm
+```
 
 ![band_with_kname](examples/band_with_kname.png)
 
@@ -33,7 +37,9 @@ In some cases, if you are interested in finding out the characters of each KS
 states, e.g. the contribution of some atom to each KS state, the flag `--occ
 atoms` comes to help.
 
-```$ pyband --occ '1 3 4'```
+```shell
+$ pyband --occ '1 3 4'shell
+```
 
 ![band_with_atom_weight](examples/band_with_atoms_weight.png)
 
@@ -41,13 +47,17 @@ where `1 3 4` are the atom index starting from 1 to #atoms  in the above image.
 The size of red dots in the figure indicates the weight of the specified atoms
 to the KS states.  This can also be represented using a colormap:
 
-```$ pyband --occ '1 3 4' --occL```
+```shell
+$ pyband --occ '1 3 4' --occL
+```
 
 ![band_with_atom_weight_cmap](examples/band_with_atoms_weight_cmap.png)
 
 The spd-projected weight can also be specefied:
 
-```$ pyband --occ '1 3 4' --spd '4 5 6 7 8' ```
+```shell
+$ pyband --occ '1 3 4' --spd '4 5 6 7 8' 
+```
 
 ![band_with_atom_weight_spd](examples/band_with_atoms_weight_spd.png)
 
@@ -67,7 +77,11 @@ More command line arguments can be found by `pyband -h`.
 This script is used to plot partial density of states (pDOS) from VASP `PROCAR`
 files. 
 
-`pydos -p '1 3 4' -p '2 7 8' -p '5 6 9' -z 0.65 -x -1 2  -y 0 6`
+```shell
+pydos -p '1 3 4' -p '2 7 8' -p '5 6 9' -z 0.65 -x -1 2  -y 0 6
+```
+
+
 
 ![pdos_example](examples/dos_p3.png)
 
@@ -80,7 +94,6 @@ limits of the plot, `-z` is followed by the energy reference of the plot.
 This script can plot PDOS from multiple VASP `PROCARs` in multiple axes, example usages:
 
 ```bash
-
 #!/bin/bash
 
 npdos -nr 2 -f 4.8 4.0 \
@@ -108,7 +121,7 @@ rearranged in the increasing order in the z-axis. It can also rearrange the
 elements in `POSCAR` in the required order. Moreover, vacuum can be added in the
 desired direction if specified. Examples usage:
 
-```
+```shell
 xcell.py -i POSCAR -s 2 2 1 -n Ti O C H --vacuum 15  -ivacuum z -o new.vasp
 ```
 
@@ -123,8 +136,8 @@ is stored in the file `new.vasp`.
 This script also make use of `ASE` to adsorb molecules onto the slab surface.
 Examples usage:
 
-```
-molAdd.py -m H2O -i POSCAR -a 36 --height 2.0 -rotx 60 -v 15.0 
+```shell
+molAdd.py -m H2O -i POSCAR -a 36 --height 2.0 --rotx 60 -v 15.0 
 ```
 
 where we add a H2O molecule above the atom with index 36 (which is the 37th
