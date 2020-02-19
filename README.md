@@ -109,7 +109,7 @@ elements in `POSCAR` in the required order. Moreover, vacuum can be added in the
 desired direction if specified. Examples usage:
 
 ```
-xcell.py -i POSCAR -s 2 2 1 -n Ti O C H -vacuum 15  -ivacuum z -o new.vasp
+xcell.py -i POSCAR -s 2 2 1 -n Ti O C H --vacuum 15  -ivacuum z -o new.vasp
 ```
 
 In the above example, we are makeing a 2x2x1 supercell based on the cell given
