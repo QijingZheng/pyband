@@ -94,7 +94,12 @@ more example:
 
 ![band_example_1](examples/band_example.png)
 
+### Plotable data
+`pyband` command produces plotable data with a `GNUPLOT` compatiable format. Files are named "pyband.dat" for spinless or SOC calculations and "pyband_up(do).dat" for spinfull calculations. Plot the bandsturcture by:
 
+```
+$ gnuplot -presist  -e 'plot "pyband.dat" u 1:($2-3.0913) w l'
+```
 
 ## pydos
 

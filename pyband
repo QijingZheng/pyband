@@ -319,9 +319,9 @@ def saveband_dat(kpath, bands, opts, whts=None):
     if nspin == 1:
         with open(prefix + '.dat', 'w') as out:
             #line = "kpts      energy      [projection weight]"
-            for ii in range(nkpts):
+            for jj in range(nbands):
                 line = ''
-                for jj in range(nbands):
+                for ii in range(nkpts):
                     line = ''
                     line += '%8.4f ' % kpath[ii]
                     line += '%10.4f' % bands[0,ii,jj]
@@ -333,9 +333,9 @@ def saveband_dat(kpath, bands, opts, whts=None):
             out.write(line)
             if opts.occ:
                 for kk in range(len(opts.occ)):
-                    for ii in range(nkpts):
+                    for jj in range(nbands):
                         line = ''
-                        for jj in range(nbands):
+                        for ii in range(nkpts):
                             line = ''
                             line += '%8.4f ' % kpath[ii]
                             line += '%10.4f ' % bands[0,ii,jj]
@@ -352,9 +352,9 @@ def saveband_dat(kpath, bands, opts, whts=None):
             filename = prefix + '_' + spinSuffix[Ispin] + '.dat'
             with open(filename, 'w') as out:
                 #line = "kpts      energy      [projection weight]"
-                for ii in range(nkpts):
+                for jj in range(nbands):
                     line = ''
-                    for jj in range(nbands):
+                    for ii in range(nkpts):
                         line = ''
                         line += '%8.4f ' % kpath[ii]
                         line += '%10.4f' % bands[Ispin,ii,jj]
@@ -366,9 +366,9 @@ def saveband_dat(kpath, bands, opts, whts=None):
                 out.write(line)
                 if opts.occ:
                     for kk in range(len(opts.occ)):
-                        for ii in range(nkpts):
+                        for jj in range(nbands):
                             line = ''
-                            for jj in range(nbands):
+                            for ii in range(nkpts):
                                 line = ''
                                 line += '%8.4f ' % kpath[ii]
                                 line += '%10.4f' % bands[Ispin,ii,jj]
@@ -554,7 +554,7 @@ if __name__ == '__main__':
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
                     lsorbit=opts.lsorbit))
             iterater += 1
-    
+
     else:
         # if opts.spdProjections:
         #     angularM = [int(x) for x in opts.spdProjections.split()]
