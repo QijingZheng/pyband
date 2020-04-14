@@ -71,7 +71,6 @@ def prasespds(angall):
             angTmp += [int(i) for i in ang.split()]
     return angTmp
 
-
 def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
     """
     Contribution of selected atoms to the each KS orbital
@@ -107,8 +106,6 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
     else:
         whichAtom = [xx - 1 for xx in whichAtom]
         return np.sum(Weights[:,:,:,whichAtom], axis=-1)
-
-
 
 ############################################################
 def get_bandInfo(inFile = 'OUTCAR'):
@@ -269,7 +266,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
     else:
         for Ispin in range(nspin):
             for Iband in range(nbands):
-                lc = None if Iband == 0 else line.get_color()
+                lc = opts.linecolors[Ispin] # if Iband == 0 else line.get_color()
                 line, = ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
                                 alpha=0.8,
                                 color=lc,
@@ -284,6 +281,12 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     for bd in kpt_bounds:
         ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
+
+    # add extra horizontal/vertical lines
+    for xx in opts.xlines:
+        ax.axhline(y=xx, ls=':', color='k', lw=0.5, alpha=0.5)
+    for yy in opts.ylines:
+        ax.axhline(x=yy, ls=':', color='k', lw=0.5, alpha=0.5)
 
     ax.set_ylabel('Energy [eV]', # fontsize='small',
             labelpad=5)
@@ -420,10 +423,25 @@ def command_line_arg():
             default=(-3, 3),
             help='energy range of the band plot')
 
+    par.add_option('--xline',
+            action='append', type="float", dest='xlines',
+            default=[],
+            help='Add horizontal lines to the figure.')
+
+    par.add_option('--yline',
+            action='append', type="float", dest='ylines',
+            default=[],
+            help='Add vertical lines to the figure.')
+
     par.add_option('--lw',
             action='store', type="float", dest='linewidth',
             default=1.0,
             help='linewidth of the band plot')
+
+    par.add_option('--lc',
+            action='store', type="str", dest='linecolors',
+            default=None,
+            help='line colors of the band plot')
 
     par.add_option('--dpi',
             action='store', type="int", dest='dpi',
@@ -575,6 +593,16 @@ if __name__ == '__main__':
     mpl.use('agg')
     import matplotlib.pyplot as plt
     mpl.rcParams['axes.unicode_minus'] = False
+
+    mpl_default_colors_cycle = [mpl.colors.to_hex(xx) for xx in
+                                mpl.rcParams['axes.prop_cycle'].by_key()['color']]
+    if opts.linecolors:
+        ctmp = [mpl.colors.to_hex(xx) for xx in opts.linecolors.split()]
+        nspin = bands.shape[0]
+        if len(ctmp) < nspin:
+            opts.linecolors = ctmp + [xx for xx in mpl_default_colors_cycle if xx not in ctmp]
+    else:
+        opts.linecolors = mpl_default_colors_cycle
 
     bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
     saveband_dat(kpath, bands,opts,whts)
