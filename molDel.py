@@ -20,7 +20,7 @@ def del_mol(cml):
         if arg.xvacuum == 'a':
             axis = (0, 1, 2)
         else:
-            exis = 'xyz'.index(arg.xvacuum)
+            axis = 'xyz'.index(arg.xvacuum)
         new.center(vacuum=arg.vacuum / 2., axis=axis)
     else:
         # By default, center the slab in the z direction and keep the original vacuum
