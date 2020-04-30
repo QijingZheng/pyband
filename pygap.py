@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys
 import numpy as np
@@ -237,7 +237,7 @@ def format_band_info(sys_info, band_info):
     else:
         lines += "-" * 32
 
-    print lines
+    print(lines)
 
 def command_line_arg():
     usage = "usage: %prog [options] OUTCAR1 OUTCAR2..."  
@@ -264,5 +264,5 @@ if __name__ == '__main__':
 
     for inf in args:
         if os.path.isfile(inf):
-            print inf, "->"
+            print(inf, "->")
             find_band_info(inf, opts.ratio, opts.zero)

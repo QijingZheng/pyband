@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import re
@@ -576,16 +576,16 @@ if __name__ == '__main__':
         t0 = time()
         xen, tdos, pdos = generateDos(opts)
         t1 = time()
-        print
-        print 'DOS calc completed! Time Used: %.2f [sec]' % (t1 - t0)
-        print
+        print("")
+        print('DOS calc completed! Time Used: %.2f [sec]' % (t1 - t0))
+        print("")
     
     t0 = time()
     dosplot(xen, tdos, pdos, opts)
     t1 = time()
-    print
-    print 'DOS plot completed! Time Used: %.2f [sec]' % (t1 - t0)
-    print
+    print("")
+    print('DOS plot completed! Time Used: %.2f [sec]' % (t1 - t0))
+    print("")
     
     # save dos to file
     if opts.dosToFile:

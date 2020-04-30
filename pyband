@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import re
@@ -537,17 +537,19 @@ if __name__ == '__main__':
         whts = []
         iterater = 0
         for occ in opts.occ:
-            # CCX 2020-01-31 prase input range of atoms
-            occTmp = praseAtoms(occ)
-            occAtom = set(occTmp)
-
-            #alist = np.array(occ.split(), dtype=int)
-            #nlist = [x for x in alist if not x == -1]
-            #cmark, = np.where(alist == -1)
-            #for ii in cmark:
-            #    nlist += range(alist[ii + 1], alist[ii + 2] + 1)
-            #occAtom = set(nlist)
-
+            nlist = []
+            for token in occ.split():
+                if '-' not in token:
+                    idx = int(token)
+                    idx -= 1
+                    nlist.append(idx)
+                else:
+                    splt = token.split('-')
+                    assert len(splt) == 2
+                    start, end = map(lambda x: int(x), splt)
+                    start -= 1
+                    nlist += range(start, end)
+            occAtom = set(nlist)
 
             # occAtom = [int(x) for x in opts.occ.split()]
             # whts = WeightFromPro(opts.procar, whichAtom = occAtom)
