@@ -283,9 +283,9 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
 
     # add extra horizontal/vertical lines
-    for xx in opts.xlines:
+    for xx in opts.hlines:
         ax.axhline(y=xx, ls=':', color='k', lw=0.5, alpha=0.5)
-    for yy in opts.ylines:
+    for yy in opts.vlines:
         ax.axhline(x=yy, ls=':', color='k', lw=0.5, alpha=0.5)
 
     ax.set_ylabel('Energy [eV]', # fontsize='small',
@@ -423,13 +423,13 @@ def command_line_arg():
             default=(-3, 3),
             help='energy range of the band plot')
 
-    par.add_option('--xline',
-            action='append', type="float", dest='xlines',
+    par.add_option('--hline',
+            action='append', type="float", dest='hlines',
             default=[],
             help='Add horizontal lines to the figure.')
 
-    par.add_option('--yline',
-            action='append', type="float", dest='ylines',
+    par.add_option('--vline',
+            action='append', type="float", dest='vlines',
             default=[],
             help='Add vertical lines to the figure.')
 
