@@ -369,7 +369,11 @@ def saveband_dat(kpath, bands, opts, whts=None):
                         line = '\n'
                         out.write(line)
         else:
-            np.savetxt(prefix + '.dat', np.c_[kpath, bands[0]], fmt='%10.4f')
+            header = "set xran [{}:{}]\n".format(kpath.min(), kpath.max())
+            header += "plot for [ii=2:{}] 'pyband.dat' u 1:ii with line lc rgb '#000' t ''\n".format(
+                nbands + 1)
+            np.savetxt(prefix + '.dat', np.c_[kpath, bands[0]], fmt='%10.4f',
+                       header=header)
 
     else:
         if opts.gnuplot:
@@ -407,7 +411,11 @@ def saveband_dat(kpath, bands, opts, whts=None):
         else:
             for Ispin in range(nspin):
                 filename = prefix + '_' + spinSuffix[Ispin] + '.dat'
-                np.savetxt(filename, np.c_[kpath, bands[Ispin]], fmt='%10.4f')
+                header = "set xran [{}:{}]\n".format(kpath.min(), kpath.max())
+                header += "plot for [ii=2:{}] '{}' u 1:ii with line lc rgb '#000' t ''\n".format(
+                    nbands + 1, filename)
+                np.savetxt(filename, np.c_[kpath, bands[Ispin]], fmt='%10.4f',
+                           header=header)
 
 ############################################################
 
