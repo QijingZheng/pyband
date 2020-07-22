@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, argparse
+import sys
+import argparse
 import numpy as np
 from ase.io import read, write
+
 
 def ase2axsf(trajs, ofile='traj.axsf'):
     '''
@@ -22,13 +24,15 @@ def ase2axsf(trajs, ofile='traj.axsf'):
                 out.write('PRIMVEC\n')
                 out.write(
                     '\n'.join([''.join(["%20.16f" % xx for xx in row])
-                                                       for row in snap.cell])
-        )
+                               for row in snap.cell])
+                    + '\n'
+                )
             out.write("PRIMCOORD {}\n".format(ii+1))
             out.write("{} 1\n".format(natoms))
             np.savetxt(out, np.c_[snap.get_atomic_numbers(), snap.positions],
                        fmt='%5d %22.16f %22.16f %22.16f'
-                    )
+                       )
+
 
 def xdatcar2traj(cml):
     arg = parse_cml_args(cml)
@@ -44,6 +48,7 @@ def xdatcar2traj(cml):
         write('{}.pdb'.format(arg.outPrefix), trajs)
     else:
         ase2axsf(trajs, ofile='{}.axsf'.format(arg.outPrefix))
+
 
 def parse_cml_args(cml):
     '''
@@ -65,6 +70,7 @@ def parse_cml_args(cml):
                      help='List of structure files.')
 
     return arg.parse_args(cml)
+
 
 if __name__ == '__main__':
     xdatcar2traj(sys.argv[1:])
