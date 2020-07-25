@@ -41,7 +41,7 @@ def praseAtoms(occ):
     return occTmp
 
 
-def prasespds(angall):
+def parsespds(angall):
     angTmp = []
     if len(angall.split()) != 1:
         for ang in angall.split():
@@ -596,12 +596,12 @@ if __name__ == '__main__':
             if opts.spdProjections:  # and (Nocc == 1):
                 # CCX 2020-02-01 check len(occ) == len(spd)?
                 if len(opts.spdProjections) != len(opts.occ):
-                    print "number of projections does not match number of occupations"
+                    print("number of projections does not match number of occupations")
                     sys.exit(0)
                 # set angall to corresponding item of spdProjections
                 angall = opts.spdProjections[iterater]
                 # praser input spd information
-                angTmp = prasespds(angall)
+                angTmp = parsespds(angall)
                 angularM = list(set(angTmp))
 
                 #angularM = [int(x) for x in opts.spdProjections.split()]
