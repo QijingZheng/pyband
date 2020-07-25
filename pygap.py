@@ -132,6 +132,7 @@ def find_band_info(inf='OUTCAR', ratio=0.2, zero=None):
             else:
                 which_gap = 'inDirect_Gap'
         else:
+            vkpt_index = ckpt_index = 0
             evbm = 0; ecbm = 0
             kcbm = kvbm = [0, 0, 0]
             which_gap = "Metal"
