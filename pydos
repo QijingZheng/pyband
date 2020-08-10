@@ -75,6 +75,54 @@ def getElemIdx(poscar='POSCAR'):
     return symb_num
 
 
+def parseSpdProjection(spd):
+    '''
+    Parse spdProjections string.  str -> [int]
+
+    # Ionizing
+    '''
+    spd_dict = {
+            's'   : [0],
+            'p'   : [1, 2, 3],
+            'd'   : [4, 5, 6, 7, 8],
+            'f'   : [9, 10, 11, 12, 13, 14, 15],
+            'py'  : [1],
+            'pz'  : [2],
+            'px'  : [3],
+            'dxy' : [4],
+            'dyz' : [5],
+            'dz2' : [6],
+            'dxz' : [7],
+            'dx2' : [8],
+    "fy(3x2-y2)"  : [9],
+    "fxyz  "      : [10],
+    "fyz2  "      : [11],
+    "fz3   "      : [12],
+    "fxz2  "      : [13],
+    "fz(x2-y2)"   : [14],
+    "fx(x2-3y2) " : [15],
+    }
+
+    ret = []
+    for l in spd.split():
+        try:
+            assert int(l) <= 15, "Maximum spd index should be <= 15."
+            ret += [int(l)]
+        except:
+            if l.lower() not in spd_dict:
+                raise ValueError(
+                   "Spd-projected wavefunction character of each KS orbital.\n"
+                   "    s orbital: 0\n"
+                   "    py, pz, px orbital: 1 2 3\n"
+                   "    dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 \n"
+                   "    fy(3x2-y2), fxyz, fyz2, fz3, fxz2, fz(x2-y2), fx(x2-3y2) orbital: 9 10 11 12 13 14 15\n"
+                   "\nFor example, --spd 's dxy 10' specifies the s/dxy/fxyz components\n"
+                )
+            ret += spd_dict[l]
+
+    return list(set(ret))
+
+
 def WeightFromPro(infile='PROCAR', lsorbit=False):
     """
     Contribution of selected atoms to the each KS orbital
@@ -304,7 +352,8 @@ def generateDos(opts):
                 # nlist = [x - 1 for x in set(nlist)]
 
             if ia <= len(opts.spdProjections) - 1:
-                spdList = [int(x) for x in opts.spdProjections[ia].split()]
+                # spdList = [int(x) for x in opts.spdProjections[ia].split()]
+                spdList = parseSpdProjection(opts.spdProjectsion[ia])   # Ionizing
                 pwhts = np.sum(whts[..., spdList], axis=-1)
             else:
                 pwhts = np.sum(whts, axis=-1)
@@ -644,8 +693,11 @@ def command_line_arg():
                    help="Spd-projected wavefunction character of each KS orbital.\n"
                    "    s orbital: 0\n"
                    "    py, pz, px orbital: 1 2 3\n"
-                   "    dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 \n")
-
+                   "    dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 \n"
+                   "    fy(3x2-y2), fxyz, fyz2, fz3, fxz2, fz(x2-y2), fx(x2-3y2) orbital: 9 10 11 12 13 14 15\n"
+                   "\nFor example, --spd 's dxy 9\n"
+                   )
+,
     par.add_option('--lsorbit',
                    action='store_true', dest='lsorbit',
                    help='Spin orbit coupling on, special treament of PROCAR')
