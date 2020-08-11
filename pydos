@@ -41,7 +41,7 @@ For example: '1 4:6 8:16:2' will be converted to '1 4 5 6 8 10 12 14 16'
         ii = m.group(1)
         jj = m.group(2) or ii
         ss = m.group(3) or 1
-        return [x for x in range(int(ii), int(jj)+1, int(ss))]
+        return [x-1 for x in range(int(ii), int(jj)+1, int(ss))]
 
     ret = []
     for rng in string.split():
@@ -340,8 +340,8 @@ def generateDos(opts):
         for ia, atoms in enumerate(opts.pdosAtom):
             # p = np.zeros((opts.nedos, nspin))
 
-            alist = np.array(atoms.split(), dtype=int)
-            if 0 in alist:
+            #  alist = np.array(atoms.split(), dtype=int)
+            if '0' in atoms.split():
                 nlist = range(nions)
             else:
                 nlist = parseList(atoms)
@@ -697,7 +697,7 @@ def command_line_arg():
                    "    fy(3x2-y2), fxyz, fyz2, fz3, fxz2, fz(x2-y2), fx(x2-3y2) orbital: 9 10 11 12 13 14 15\n"
                    "\nFor example, --spd 's dxy 9\n"
                    )
-,
+
     par.add_option('--lsorbit',
                    action='store_true', dest='lsorbit',
                    help='Spin orbit coupling on, special treament of PROCAR')
