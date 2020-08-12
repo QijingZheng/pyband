@@ -353,7 +353,7 @@ def generateDos(opts):
 
             if ia <= len(opts.spdProjections) - 1:
                 # spdList = [int(x) for x in opts.spdProjections[ia].split()]
-                spdList = parseSpdProjection(opts.spdProjectsion[ia])   # Ionizing
+                spdList = parseSpdProjection(opts.spdProjections[ia])   # Ionizing
                 pwhts = np.sum(whts[..., spdList], axis=-1)
             else:
                 pwhts = np.sum(whts, axis=-1)
