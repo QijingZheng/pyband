@@ -304,11 +304,11 @@ def generateDos(opts):
         for elem in opts.elem_list:
             if elem.upper() == 'XX':
                 opts.pdosAtom = [
-                    ' '.join([str(i) for i in elem_idx[k]]) for k in elem_idx]
+                    ' '.join([str(i+1) for i in elem_idx[k]]) for k in elem_idx]
                 # print(opts.pdosAtom)
                 opts.pdosLabel = elem_idx.keys()
                 break
-            opts.pdosAtom.append(" ".join([str(i) for i in elem_idx[elem]]))
+            opts.pdosAtom.append(" ".join([str(i+1) for i in elem_idx[elem]]))
             opts.pdosLabel.append(elem)
 
     if len(opts.pdosAtom) != 0:
