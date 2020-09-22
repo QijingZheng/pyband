@@ -13,72 +13,79 @@ __version__ = "1.0"
 
 
 def parseList(string):
-    m = re.match(r'(\d+)(?:-(\d+))?$', string)
-    if not m:
-        raise ArgumentTypeError(
-            "'" + string + "' is not a range of number. Expected forms like '0-5' or '2'.")
-    start = m.group(1)
-    end = m.group(2) or start
-    return list(range(int(start, 10), int(end, 10)+1))
+    def parseRange(rng):
+        # print(rng)
+        m = re.match(r'(\d+)(?:[-:](\d+))?(?:[-:](\d+))?$', rng)
+        if not m:
+            raise ValueError(
+                """
+The index should be assigned with combination of the following ways:
+-> 10, a single band with index 10
+-> 20:30, or '20-30', a continuous range from 20 to 30, 30 included
+-> 30:50:2, or '30-50:2', a continues range from 30 to 50, with step size 2
+-> '1 2 3', all the patterns above in one string separated by spaces.
+For example: '1 4:6 8:16:2' will be converted to '1 4 5 6 8 10 12 14 16'
+"""
+            )
+        ii = m.group(1)
+        jj = m.group(2) or ii
+        ss = m.group(3) or 1
+        return [x-1 for x in range(int(ii), int(jj)+1, int(ss))]
 
-# CCX 2020-02-01 customize parser
+    ret = []
+    for rng in string.split():
+        ret += parseRange(rng)
+    return list(set(ret))
+
+def parseSpdProjection(spd):
+    '''
+    Parse spdProjections string.  str -> [int]
+
+    # Ionizing
+    '''
+    spd_dict = {
+            's'   : [0],
+            'p'   : [1, 2, 3],
+            'd'   : [4, 5, 6, 7, 8],
+            'f'   : [9, 10, 11, 12, 13, 14, 15],
+            'py'  : [1],
+            'pz'  : [2],
+            'px'  : [3],
+            'dxy' : [4],
+            'dyz' : [5],
+            'dz2' : [6],
+            'dxz' : [7],
+            'dx2' : [8],
+    "fy(3x2-y2)"  : [9],
+    "fxyz  "      : [10],
+    "fyz2  "      : [11],
+    "fz3   "      : [12],
+    "fxz2  "      : [13],
+    "fz(x2-y2)"   : [14],
+    "fx(x2-3y2) " : [15],
+    }
+
+    ret = []
+    for l in spd.split():
+        try:
+            assert int(l) <= 15, "Maximum spd index should be <= 15."
+            ret += [int(l)]
+        except:
+            if l.lower() not in spd_dict:
+                raise ValueError(
+                   "Spd-projected wavefunction character of each KS orbital.\n"
+                   "    s orbital: 0\n"
+                   "    py, pz, px orbital: 1 2 3\n"
+                   "    dxy, dyz, dz2, dxz, dx2 orbital: 4 5 6 7 8 \n"
+                   "    fy(3x2-y2), fxyz, fyz2, fz3, fxz2, fz(x2-y2), fx(x2-3y2) orbital: 9 10 11 12 13 14 15\n"
+                   "\nFor example, --spd 's dxy 10' specifies the s/dxy/fxyz components\n"
+                )
+            ret += spd_dict[l]
+
+    return list(set(ret))
 
 
-def parseAtoms(occ):
-    occTmp = []
-    if len(occ.split()) != 1:
-        for occ_bak in occ.split():
-            if '-' in occ_bak:
-                occTmp += parseList(occ_bak)
-            else:
-                occTmp += [int(i) for i in occ_bak.split()]
-    else:
-        occ_bak = occ
-        if '-' in occ_bak:
-            occTmp += parseList(occ_bak)
-        else:
-            occTmp += [int(i) for i in occ_bak.split()]
-    return occTmp
-
-
-def parsespds(angall):
-    angTmp = []
-    if len(angall.split()) != 1:
-        for ang in angall.split():
-            # for range
-            if '-' in ang:
-                angTmp += parseList(ang)
-            # for s p d preset
-            elif ang == 's':
-                angTmp += [0]
-            elif ang == 'p':
-                angTmp += [1, 2, 3]
-            elif ang == 'd':
-                angTmp += [4, 5, 6, 7, 8]
-            elif ang == 'f':
-                angTmp += [9, 10, 11, 12, 13, 14, 15]
-            else:
-                angTmp += [int(i) for i in ang.split()]
-    else:
-        ang = angall
-        # for range
-        if '-' in ang:
-            angTmp += parseList(ang)
-        # for s p d preset
-        elif ang == 's':
-            angTmp += [0]
-        elif ang == 'p':
-            angTmp += [1, 2, 3]
-        elif ang == 'd':
-            angTmp += [4, 5, 6, 7, 8]
-        elif ang == 'f':
-            angTmp += [9, 10, 11, 12, 13, 14, 15]
-        else:
-            angTmp += [int(i) for i in ang.split()]
-    return angTmp
-
-
-def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
+def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False, spin=None):
     """
     Contribution of selected atoms to the each KS orbital
     """
@@ -105,14 +112,16 @@ def WeightFromPro(infile='PROCAR', whichAtom=None, spd=None, lsorbit=False):
 
     if lsorbit:
         Weights.resize(nspin, nkpts, nbands, 4, nions)
-        Weights = Weights[:, :, :, 0, :]
+        wid = [None, 'x', 'y', 'z'].index(spin)
+        Weights = Weights[:, :, :, wid, :]
     else:
         Weights.resize(nspin, nkpts, nbands, nions)
 
     if whichAtom is None:
         return np.sum(Weights, axis=-1)
     else:
-        whichAtom = [xx - 1 for xx in whichAtom]
+        # whichAtom = [xx - 1 for xx in whichAtom]
+        whichAtom = [xx for xx in whichAtom]
         return np.sum(Weights[:, :, :, whichAtom], axis=-1)
 
 ############################################################
@@ -544,6 +553,10 @@ def command_line_arg():
                    default=[],
                    help='Spd-projected wavefunction character of each KS orbital.')
 
+    par.add_option('--spin', action='store', dest='spin',
+                   default=None, default=['x', 'y', 'z'],
+                   help='show the magnetization mx/y/z constributions to the states')
+
     par.add_option('--lsorbit',
                    action='store_true', dest='lsorbit',
                    help='Spin orbit coupling on, special treament of PROCAR')
@@ -579,38 +592,29 @@ if __name__ == '__main__':
         iterater = 0
         for occ in opts.occ:
             # CCX 2020-01-31 parse input range of atoms
-            occTmp = parseAtoms(occ)
-            occAtom = set(occTmp)
+            # if '0' in the index, select all the atoms
+            if '0' in occ.split():
+                occAtom = None
+            else:
+                occAtom = parseList(occ)
 
-            #alist = np.array(occ.split(), dtype=int)
-            #nlist = [x for x in alist if not x == -1]
-            #cmark, = np.where(alist == -1)
-            # for ii in cmark:
-            #    nlist += range(alist[ii + 1], alist[ii + 2] + 1)
-            #occAtom = set(nlist)
-
-            # occAtom = [int(x) for x in opts.occ.split()]
-            # whts = WeightFromPro(opts.procar, whichAtom = occAtom)
-
-            # CCX 2020-01-31 parse spd for specific list of atoms `occ` in `opts.occ`
             if opts.spdProjections:  # and (Nocc == 1):
                 # CCX 2020-02-01 check len(occ) == len(spd)?
                 if len(opts.spdProjections) != len(opts.occ):
                     print("number of projections does not match number of occupations")
                     sys.exit(0)
                 # set angall to corresponding item of spdProjections
-                angall = opts.spdProjections[iterater]
-                # parser input spd information
-                angTmp = parsespds(angall)
-                angularM = list(set(angTmp))
+                angularM = parseSpdProjection(opts.spdProjections[iterater])
 
                 #angularM = [int(x) for x in opts.spdProjections.split()]
                 # print angularM
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
-                                          spd=angularM, lsorbit=opts.lsorbit))
+                                          spd=angularM, lsorbit=opts.lsorbit,
+                                          spin=opts.spin))
             else:
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
-                                          lsorbit=opts.lsorbit))
+                                          lsorbit=opts.lsorbit,
+                                          spin=opts.spin))
             iterater += 1
 
     else:
