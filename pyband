@@ -9,9 +9,6 @@ from optparse import OptionParser
 __version__ = "1.0"
 ############################################################
 
-# CCX 2020-01-31 range parser
-
-
 def parseList(string):
     def parseRange(rng):
         # print(rng)
