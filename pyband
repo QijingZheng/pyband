@@ -554,7 +554,7 @@ def command_line_arg():
                    help='Spd-projected wavefunction character of each KS orbital.')
 
     par.add_option('--spin', action='store', dest='spin',
-                   default=None, default=['x', 'y', 'z'],
+                   default=None, choices=['x', 'y', 'z'],
                    help='show the magnetization mx/y/z constributions to the states')
 
     par.add_option('--lsorbit',
