@@ -283,6 +283,11 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         cbar = plt.colorbar(s_m, cax=ax_cbar,
                             # ticks=[0.0, 1.0],
                             orientation=ori)
+        if ori == 'horizontal':
+            cbar.ax.xaxis.set_ticks_position('top')
+        else:
+            cbar.ax.yaxis.set_ticks_position('right')
+
         # cbar.ax.set_xticklabels([])
         # cbar.ax.set_yticklabels([])
 
