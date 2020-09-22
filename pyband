@@ -604,8 +604,8 @@ if __name__ == '__main__':
 
     if opts.occ:
 
-        Nocc = len(opts.occ)
-        occM = ['o' for ii in range(Nocc)]
+        Nocc  = len(opts.occ)
+        occM  = ['o' for ii in range(Nocc)]
         occMc = ['r' for ii in range(Nocc)]
         occMs = [20 for ii in range(Nocc)]
         for ii in range(min(len(opts.occMarker), Nocc)):
@@ -614,9 +614,9 @@ if __name__ == '__main__':
             occMs[ii] = opts.occMarkerSize[ii]
         for ii in range(min(len(opts.occMarkerColor), Nocc)):
             occMc[ii] = opts.occMarkerColor[ii]
-        opts.occMarker = occM
+        opts.occMarker      = occM
         opts.occMarkerColor = occMc
-        opts.occMarkerSize = occMs
+        opts.occMarkerSize  = occMs
 
         whts = []
         iterater = 0
@@ -629,15 +629,13 @@ if __name__ == '__main__':
                 occAtom = parseList(occ)
 
             if opts.spdProjections:  # and (Nocc == 1):
-                # CCX 2020-02-01 check len(occ) == len(spd)?
                 if len(opts.spdProjections) != len(opts.occ):
                     print("number of projections does not match number of occupations")
                     sys.exit(0)
+
                 # set angall to corresponding item of spdProjections
                 angularM = parseSpdProjection(opts.spdProjections[iterater])
 
-                #angularM = [int(x) for x in opts.spdProjections.split()]
-                # print angularM
                 whts.append(WeightFromPro(opts.procar, whichAtom=occAtom,
                                           spd=angularM, lsorbit=opts.lsorbit,
                                           spin=opts.spin))
@@ -648,11 +646,6 @@ if __name__ == '__main__':
             iterater += 1
 
     else:
-        # if opts.spdProjections:
-        #     angularM = [int(x) for x in opts.spdProjections.split()]
-        #     whts = WeightFromPro(opts.procar, whichAtom=None, spd=angularM)
-        # else:
-        #     whts = None
         whts = None
 
     kpath, bands, efermi, kpt_bounds = get_bandInfo(opts.filename)
