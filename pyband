@@ -240,8 +240,10 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         LW = opts.occLC_lw
         DELTA = 0.3
         EnergyWeight = whts[0]
-        norm = mpl.colors.Normalize(vmin=EnergyWeight.min(),
-                                    vmax=EnergyWeight.max())
+        norm = mpl.colors.Normalize(
+                vmin = opts.occLC_cbar_vmin if opts.occLC_cbar_vmin else EnergyWeight.min(),
+                vmax = opts.occLC_cbar_vmax if opts.occLC_cbar_vmax else EnergyWeight.max(),
+        )
         # norm = mpl.colors.Normalize(0, 1)
         # create a ScalarMappable and initialize a data structure
         s_m = mpl.cm.ScalarMappable(cmap=opts.occLC_cmap, norm=norm)
@@ -280,13 +282,19 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         cbar = plt.colorbar(s_m, cax=ax_cbar,
                             # ticks=[0.0, 1.0],
                             orientation=ori)
+        if opts.occLC_cbar_ticks:
+            cbar.set_ticks([
+                float(x) for x in
+                opts.occLC_cbar_ticks.split()
+            ])
+            if opts.occLC_cbar_ticklabels:
+                cbar.set_ticklabels(opts.occLC_cbar_ticklabels.split())
+
         if ori == 'horizontal':
             cbar.ax.xaxis.set_ticks_position('top')
         else:
             cbar.ax.yaxis.set_ticks_position('right')
 
-        # cbar.ax.set_xticklabels([])
-        # cbar.ax.set_yticklabels([])
 
     else:
         for Ispin in range(nspin):
@@ -524,6 +532,26 @@ def command_line_arg():
                    action='store', type='string', dest='occLC_cbar_pos',
                    default='top',
                    help='position of the colorbar')
+
+    par.add_option('--occLC_cbar_ticks',
+                   action='store', type='string', dest='occLC_cbar_ticks',
+                   default=None,
+                   help='ticks for the colorbar')
+
+    par.add_option('--occLC_cbar_vmin',
+                   action='store', type='float', dest='occLC_cbar_vmin',
+                   default=None,
+                   help='minimum value for the color plot')
+
+    par.add_option('--occLC_cbar_vmax',
+                   action='store', type='float', dest='occLC_cbar_vmax',
+                   default=None,
+                   help='maximum value for the color plot')
+
+    par.add_option('--occLC_cbar_ticklabels',
+                   action='store', type='string', dest='occLC_cbar_ticklabels',
+                   default=None,
+                   help='tick labels for the colorbar')
 
     par.add_option('--occLC_cbar_size',
                    action='store', type='string', dest='occLC_cbar_size',
