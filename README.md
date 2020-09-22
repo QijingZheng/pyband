@@ -43,9 +43,9 @@ or combination
 
 ```$ pyband --occ '1-4 5-6 7'```
 
-use `--occ 0` to select all the atoms:
+Note the the index `0` is a special one, it is used select all the atoms
 
-```$ pyband --occ '1-4 5-6 7'```
+```$ pyband --occ 0```
 
 ![band_with_atom_weight](examples/band_with_atoms_weight.png)
 
