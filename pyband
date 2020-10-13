@@ -393,6 +393,10 @@ def saveband_dat(kpath, bands, opts, whts=None):
                 nbands + 1)
             np.savetxt(prefix + '.dat', np.c_[kpath, bands[0]], fmt='%10.4f',
                        header=header)
+            if whts:
+                for i in range(len(whts)):
+                    np.savetxt(prefix + '_weights_component_{}.dat'.format(i + 1),
+                               np.c_[kpath, whts[i][0]], fmt='%10.4f', header=header)
 
     else:
         if opts.gnuplot:
@@ -435,6 +439,11 @@ def saveband_dat(kpath, bands, opts, whts=None):
                     nbands + 1, filename)
                 np.savetxt(filename, np.c_[kpath, bands[Ispin]], fmt='%10.4f',
                            header=header)
+                if whts:
+                    for i in range(len(whts)):
+                        filename = prefix + '_' + spinSuffix[Ispin] + '_weights_component_{}'.format(i + 1) + '.dat'
+                        np.savetxt(filename, np.c_[kpath, whts[i][Ispin]], fmt='%10.4f',
+                                   header=header)
 
 ############################################################
 
