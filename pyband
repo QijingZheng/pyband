@@ -675,7 +675,7 @@ if __name__ == '__main__':
     if opts.linecolors:
         ctmp = [mpl.colors.to_hex(xx) for xx in opts.linecolors.split()]
         nspin = bands.shape[0]
-        if len(ctmp) < nspin:
+        if len(ctmp) <= nspin:
             opts.linecolors = ctmp + \
                 [xx for xx in mpl_default_colors_cycle if xx not in ctmp]
     else:
