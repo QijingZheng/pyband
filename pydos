@@ -306,7 +306,7 @@ def generateDos(opts):
                 opts.pdosAtom = [
                     ' '.join([str(i+1) for i in elem_idx[k]]) for k in elem_idx]
                 # print(opts.pdosAtom)
-                opts.pdosLabel = elem_idx.keys()
+                opts.pdosLabel = list(elem_idx.keys())
                 break
             opts.pdosAtom.append(" ".join([str(i+1) for i in elem_idx[elem]]))
             opts.pdosLabel.append(elem)
