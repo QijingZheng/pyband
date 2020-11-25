@@ -4,6 +4,7 @@ import os
 import re
 import numpy as np
 from optparse import OptionParser
+import pandas as pd  # import pandas to read KPOINTS file
 
 ############################################################
 __version__ = "1.0"
@@ -325,8 +326,17 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     ax.set_ylabel('Energy [eV]',  # fontsize='small',
                   labelpad=5)
+
+    ax.yaxis.set_minor_locator(AutoMinorLocator(opts.MinorLocator)) # How many MinorLocator
+
     ax.set_ylim(ymin, ymax)
     ax.set_xlim(kpath.min(), kpath.max())
+
+    #### figule title
+    if opts.title:
+        title = opts.title
+        title = '$\mathregular{' + title + '}$'
+        ax.set_title(title)
 
     ax.set_xticks(kpt_bounds)
     if opts.kpts:
@@ -337,6 +347,75 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
             else:
                 kname[ii] = r'$\mathrm{\mathsf{%s}}$' % kname[ii]
         ax.set_xticklabels(kname)
+
+
+    ############## added by ymj155@gmail.com #############################
+    # read k-label from KPOINTS file, the k-label in  Line-mode KPOINTS must
+    # split by !
+    elif opts.kpoints:
+        if os.path.isfile(opts.kpoints):
+            kp = open(opts.kpoints).readlines()
+
+        if os.path.isfile(opts.kpoints) and kp[2][0].upper() == 'L':  # check kpoints file is Line-mode
+            kclabelf = pd.read_table(opts.kpoints, header=None, sep='\t')
+            kclabel = kclabelf.values
+            kname = []
+
+            for i in range(kclabel.shape[0]):
+                if i > 3:
+                    kname.append(kclabel[i][0].split('!')[-1])  #  for k-label split by '!'
+
+            for i in range(len(kname)):
+                kname[i] = kname[i].split()[-1]  # split the space
+
+            for i,j in enumerate(kname):
+                if j == 'GAMMA':
+                    kname[i] = r'$\mathrm{\mathsf{\Gamma}}$'
+                elif j in ['\Gamma', '\Sigma', '\Sigma_1']:
+                    kname[i] = '$\mathregular{' + j + '}$'
+                elif '_' in j:
+                    kname[i] = '$\mathregular{' + j + '}$'
+
+            if opts.section:  # drawing part of band
+                # ax.set_xticklabels([])
+                kname = np.array(kname).reshape(-1, 2)
+                kname_new = []
+                section = np.array(opts.section, dtype=int)
+                for sec in section:
+                    kname_new = np.append(kname_new, kname[sec - 1])
+                kname = kname_new.reshape(-1)
+
+                kname2 = []
+
+                for i in range(len(kname)):
+                    if i == 0 or i == len(kname) - 1:
+                        kname2.append(kname[i])
+                    else:
+                        # when "i" is an even number, judge whether it is the same as the latter
+                        if i % 2 == 1:
+                            if kname[i] == kname[i + 1]:
+                                kname2.append(kname[i])
+                            elif kname[i] != kname[i + 1]:
+                                kname2.append(kname[i] + '/' + kname[i + 1])
+
+                ax.set_xticklabels(kname2)
+
+            else:
+                kname2 = []
+                for i in range(len(kname)):
+                    if i == 0 or i == len(kname) - 1:
+                        kname2.append(kname[i])
+                    else:
+                        # when "i" is an even number, judge whether it is the same as the latter
+                        if i % 2 == 1:
+                            if kname[i] == kname[i + 1]:
+                                kname2.append(kname[i])
+                            elif kname[i] != kname[i + 1]:
+                                kname2.append(kname[i] + '/' + kname[i + 1])
+
+                ax.set_xticklabels(kname2)
+    ########################## end #########################################################
+
     else:
         ax.set_xticklabels([])
 
@@ -604,6 +683,33 @@ def command_line_arg():
                    action='store_true', dest='quiet',
                    help='not show the resulting image')
 
+    ########### added by ymj155@gmail.com ################
+    par.add_option('--fkpoints',
+            action='store', type="string",
+            dest='kpoints', default='KPOINTS',
+            help='location of KPOINTS')
+
+    par.add_option('--title', action='store',
+             type="string",
+            dest='title', default=None,
+            help='title of the image')
+
+    par.add_option('--fontsize', action='store',
+            type="float", dest='fontsize',
+            default=18,
+            help='fontsize of the output plot')
+
+    par.add_option('--section',
+            action='append', type="int",
+            dest='section', default=[],
+            help='section want to plot')
+
+    par.add_option('--MinorLocator',
+            action='store', type="int",
+            dest='MinorLocator', default=None,
+            help='how many minor locator you want')
+    ######################################################
+
     return par.parse_args()
 
 
@@ -669,6 +775,9 @@ if __name__ == '__main__':
     mpl.use('agg')
     import matplotlib.pyplot as plt
     mpl.rcParams['axes.unicode_minus'] = False
+    mpl.rcParams['font.family'] = 'Times New Roman'  # chang Font
+    if opts.fontsize:
+        mpl.rcParams['font.size'] = opts.fontsize
 
     mpl_default_colors_cycle = [mpl.colors.to_hex(xx) for xx in
                                 mpl.rcParams['axes.prop_cycle'].by_key()['color']]
@@ -681,8 +790,114 @@ if __name__ == '__main__':
     else:
         opts.linecolors = mpl_default_colors_cycle
 
-    bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
-    saveband_dat(kpath, bands, opts, whts)
+########### added by ymj155@gmail.com ################################################
+    # For MBJ type band structure, need files: KPOINTS.band, IBZKPT.
+    if os.path.isfile('KPOINTS'):
+        kp = open('KPOINTS').readlines()
+    if os.path.isfile('KPOINTS') and kp[2][0].upper() != 'L':
+        # MBJ type
+        if os.path.isfile("IBZKPT") and os.path.isfile("KPOINTS.band"):
+            ibzkpt = open('IBZKPT').readlines()
+            skip_kpts = int(ibzkpt[1])
+
+            kpt_band = open('KPOINTS.band').readlines()
+            per_line = int(kpt_band[1])
+
+            # kpath = kpath[skip_kpts:]  - kpath[skip_kpts]  # The point with a weight of 0 is at the end
+            kpath = kpath[:-skip_kpts]  # The point with a weight of 0 is at the top
+            # Eliminate unnecessary parts
+            forwards = []
+            for k in range(int(len(kpath) / per_line))[1:]:
+                diff = kpath[k * per_line] - kpath[k * per_line - 1]
+                # print(diff)
+                forwards.append(diff)
+                kpath[k * per_line:] = kpath[k * per_line:] - diff
+
+            bands = bands[:, :-skip_kpts, :]  # get the Linemode band structure
+            # get boundaries of band path
+            xx = np.diff(kpath)
+            kpt_bounds = np.concatenate(([0.0, ], kpath[1:][np.isclose(xx, 0.0)], [kpath[-1], ]))
+
+            # plot part of the band
+            if opts.section:
+                section = np.array(opts.section, dtype=int)
+                if os.path.isfile('KPOINTS'):
+                    kp = open('KPOINTS').readlines()
+                if os.path.isfile('KPOINTS') and kp[2][0].upper() == 'L':
+                    kpt_band = open('KPOINTS').readlines()
+                    per_line = int(kpt_band[1])
+
+                nspin, nkpts, nbands = bands.shape
+
+                kpath_new = []
+                bands_new = []
+                for sec in section:
+                    kpath_new = np.append(kpath_new, kpath[(sec - 1) * per_line:sec * per_line])
+                    bands_new = np.append(bands_new, bands[:, (sec - 1) * per_line:sec * per_line, :])
+
+                kpath = np.array(kpath_new)
+                nkpts = len(kpath)
+                bands = np.array(bands_new, dtype=float).reshape((nspin, nkpts, nbands))  # new kpath and bands
+
+                forwards = []
+                for k in range(int(len(kpath) / per_line))[1:]:
+                    diff = kpath[k * per_line] - kpath[k * per_line - 1]
+                    # print(diff)
+                    forwards.append(diff)
+                    kpath[k * per_line:] = kpath[k * per_line:] - diff
+                # get boundaries of band path
+                xx = np.diff(kpath)
+                kpt_bounds = np.concatenate(([min(kpath), ], kpath[1:][np.isclose(xx, 0.0)], [kpath[-1], ]))
+                bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+                saveband_dat(kpath, bands, opts, whts)
+
+            else:
+                bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+                saveband_dat(kpath, bands, opts, whts)
+        else:
+            print("if you want MBJ type, you need IBZKBT and KPOINTS.band")
+
+    else:
+        # plot part of the band
+        if opts.section:
+            section = np.array(opts.section, dtype=int)
+            if os.path.isfile('KPOINTS'):
+                kp = open('KPOINTS').readlines()
+            if os.path.isfile('KPOINTS') and kp[2][0].upper() == 'L':
+                kpt_band = open('KPOINTS').readlines()
+                per_line = int(kpt_band[1])
+
+            nspin, nkpts, nbands = bands.shape
+
+            kpath_new = []
+            bands_new = []
+            for sec in section:
+                kpath_new = np.append(kpath_new, kpath[(sec - 1) * per_line:sec * per_line])
+                bands_new = np.append(bands_new, bands[:, (sec - 1) * per_line:sec * per_line, :])
+
+            kpath = np.array(kpath_new)
+            nkpts = len(kpath)
+            bands = np.array(bands_new, dtype=float).reshape((nspin, nkpts, nbands))
+
+            forwards = []
+            for k in range(int(len(kpath) / per_line))[1:]:
+                diff = kpath[k * per_line] - kpath[k * per_line - 1]
+                # print(diff)
+                forwards.append(diff)
+                kpath[k * per_line:] = kpath[k * per_line:] - diff
+            # get boundaries of band path
+            xx = np.diff(kpath)
+            kpt_bounds = np.concatenate(([min(kpath), ], kpath[1:][np.isclose(xx, 0.0)], [kpath[-1], ]))
+            bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+            saveband_dat(kpath, bands, opts, whts)
+
+        else:
+            bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+            saveband_dat(kpath, bands, opts, whts)
+######################################################################################
+
+    # bandplot(kpath, bands, efermi, kpt_bounds, opts, whts)
+    # saveband_dat(kpath, bands, opts, whts)
 
     if not opts.quiet:
         from subprocess import call
