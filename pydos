@@ -467,6 +467,7 @@ def dosplot(xen, tdos, pdos, opts):
     plt.style.use(opts.mpl_style)
     # DO NOT use unicode minus regardless of the style
     mpl.rcParams['axes.unicode_minus'] = False
+    mpl.rcParams['font.family'] = 'Times New Roman'  # chang Font
 
     fig = plt.figure()
     fig.set_size_inches(width, height)
@@ -536,7 +537,24 @@ def dosplot(xen, tdos, pdos, opts):
     if opts.ylim is not None:
         ymin, ymax = opts.ylim
         ax.set_ylim(ymin, ymax)
+    ######################  set ylim to fit xlim ###################
+    else:
+        # tdos spin up/do
+        ymin_list = []
+        ymax_list = []
+        for ii in range(nspin):
+            ymin =  min(tdos[:, ii][np.logical_and(xen >= xmin, xen <= xmax)])
+            ymax =  max(tdos[:, ii][np.logical_and(xen >= xmin, xen <= xmax)])
+            ymin_list.append(ymin)
+            ymax_list.append(ymax)
 
+        if min(ymin_list) < 0:
+            ymin -= 1
+        else:
+            ymin = 0
+
+        ax.set_ylim(ymin, max(ymax_list)+1)
+#####################################################################
     # ax.set_yticklabels([])
 
     ax.xaxis.set_minor_locator(AutoMinorLocator(2))
@@ -741,6 +759,6 @@ if __name__ == '__main__':
     if opts.dosToFile:
         saveDOSToFile(opts, xen, tdos, pdos)
 
-    if not opts.quiet:
-        from subprocess import call
-        call(['feh', '-xdF', opts.dosimage])
+    # if not opts.quiet:
+    #     from subprocess import call
+    #     call(['feh', '-xdF', opts.dosimage])
