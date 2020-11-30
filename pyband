@@ -594,7 +594,7 @@ def command_line_arg():
 
     par.add_option('--spin', action='store', dest='spin',
                    default=None, choices=['x', 'y', 'z'],
-                   help='show the magnetization mx/y/z constributions to the states')
+                   help='show the magnetization mx/y/z constributions to the states. Use this option along with --occ.')
 
     par.add_option('--lsorbit',
                    action='store_true', dest='lsorbit',
