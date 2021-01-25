@@ -4,15 +4,25 @@ A script to plot work function using LOCPOT.
 Requirement: python3, numpy, matplotlib, ase
 Author: @Ionizing
 Date: 22:46, Jan 11th, 2021.
+CHANGELOG:
+    - 1:56, Jan 25th, 2021
+        - Add E-fermi level correction
+        - More logging info
 '''
 
 from argparse import ArgumentParser
+import os
+import logging
+import re
 import numpy as np
 import matplotlib.pyplot as plt
-from ase.calculators.vasp.vasp import VaspChargeDensity
+from ase.calculators.vasp import VaspChargeDensity
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def locpot_mean(fname="LOCPOT", axis='z', savefile='locpot.dat'):
+def locpot_mean(fname="LOCPOT", axis='z', savefile='locpot.dat', outcar="OUTCAR"):
     '''
     Reads the LOCPOT file and calculate the average potential along `axis`.
      @in: See function argument.
@@ -20,6 +30,17 @@ def locpot_mean(fname="LOCPOT", axis='z', savefile='locpot.dat'):
           - xvals: grid data along selected axis;
           - mean: averaged potential corresponding to `xvals`.
     '''
+    def get_efermi(outcar="OUTCAR"):
+        if not os.path.isfile(outcar):
+            logger.warning("OUTCAR file not found. E-fermi set to 0.0eV")
+            return None
+        txt = open(outcar).read()
+        efermi = re.search(
+            r'E-fermi :\s*([-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?)', txt).groups()[0]
+        logger.info("Found E-fermi = {}".format(efermi))
+        return float(efermi)
+
+    logger.info("Loading LOCPOT file {}".format(fname))
     locd = VaspChargeDensity(fname)
     cell = locd.atoms[0].cell
     latlens = np.linalg.norm(cell, axis=1)
@@ -32,13 +53,21 @@ def locpot_mean(fname="LOCPOT", axis='z', savefile='locpot.dat'):
 
     locpot = locd.chg[0]
     # must multiply with cell volume, similar to CHGCAR
+    logger.info("Calculating workfunction along {} axis".format(axis))
     mean = np.mean(locpot, axes) * vol
 
     xvals = np.linspace(0, latlens[iaxis], locpot.shape[iaxis])
 
     # save to 'locpot.dat'
-    np.savetxt(savefile, np.c_[xvals, mean],
-               fmt='%13.5f', header='Distance(A) Potential(eV)')
+    efermi = get_efermi(outcar)
+    logger.info("Saving raw data to {}".format(savefile))
+    if efermi is None:
+        np.savetxt(savefile, np.c_[xvals, mean],
+                   fmt='%13.5f', header='Distance(A) Potential(eV) # E-fermi not corrected')
+    else:
+        mean -= efermi
+        np.savetxt(savefile, np.c_[xvals, mean],
+                   fmt='%13.5f', header='Distance(A) Potential(eV) # E-fermi shifted to 0.0eV')
     return (xvals, mean)
 
 
@@ -58,13 +87,13 @@ def parse_cml_arguments():
     parser.add_argument('--title', type=str, action='store',
                         help='Title in output image. If none, no title is added, default is None', default=None)
     return parser.parse_args()
-    pass
 
 
 if '__main__' == __name__:
     args = parse_cml_arguments()
     x, y = locpot_mean(args.input, args.axis, args.write)
 
+    logger.info("Plotting to image")
     plt.plot(x, y, color='k')
     plt.xlabel('Distance(A)')
     plt.ylabel('Potential(eV)')
@@ -74,4 +103,6 @@ if '__main__' == __name__:
 
     if args.title:
         plt.title(args.title)
+
+    logger.info("Saving to {}".format(args.output))
     plt.savefig(args.output, dpi=args.dpi)
