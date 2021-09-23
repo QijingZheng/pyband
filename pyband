@@ -9,6 +9,40 @@ from optparse import OptionParser
 __version__ = "1.0"
 ############################################################
 
+def kpath_name_parse(KPATH_STR):
+    '''
+    Parse the kpath string
+    '''
+
+    KPATH_STR = KPATH_STR.upper()
+    # legal kpath separators: blank space, comma, hypen or semicolon
+    KPATH_SEPARATORS = ' ,-;'
+    # Greek Letters Dictionaries
+    GREEK_KPTS = {
+        'G':      r'$\mathrm{\mathsf{\Gamma}}$',
+        'GAMMA':  r'$\mathrm{\mathsf{\Gamma}}$',
+        'DELTA':  r'$\mathrm{\mathsf{\Delta}}$',
+        'LAMBDA': r'$\mathrm{\mathsf{\Lambda}}$',
+        'SIGMA':  r'$\mathrm{\mathsf{\Sigma}}$',
+    }
+
+    # If any of the kpath separators is in the kpath string
+    if any([s in KPATH_STR for s in KPATH_SEPARATORS]):
+        kname = [
+            GREEK_KPTS[x] if x in GREEK_KPTS else 
+	    r'$\mathrm{{\mathsf{{{}}}}}$'.format(x)
+            for x in re.sub('['+KPATH_SEPARATORS+']', ' ', KPATH_STR).split()
+        ]
+    else:
+        kname = [
+            GREEK_KPTS[x] if x in GREEK_KPTS else 
+	    r'$\mathrm{{\mathsf{{{}}}}}$'.format(x)
+            for x in KPATH_STR
+        ]
+
+    return kname
+        
+        
 def parseList(string):
     def parseRange(rng):
         # print(rng)
@@ -330,13 +364,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     ax.set_xticks(kpt_bounds)
     if opts.kpts:
-        kname = [x.upper() for x in opts.kpts]
-        for ii in range(len(kname)):
-            if kname[ii] == 'G':
-                kname[ii] = r'$\mathrm{\mathsf{\Gamma}}$'
-            else:
-                kname[ii] = r'$\mathrm{\mathsf{%s}}$' % kname[ii]
-        ax.set_xticklabels(kname)
+        ax.set_xticklabels(kpath_name_parse(opts.kpts))
     else:
         ax.set_xticklabels([])
 
@@ -475,7 +503,7 @@ def command_line_arg():
     par.add_option('-k', '--kpoints',
                    action='store', type="string", dest='kpts',
                    default=None,
-                   help='kpoint path')
+                   help='kpoint path, use ",", " ", ";" or "-" to separate the K-point if necessary.')
 
     par.add_option('-s', '--size', nargs=2,
                    action='store', type="float", dest='figsize',
