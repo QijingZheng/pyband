@@ -245,7 +245,7 @@ def get_bandInfo(inFile='OUTCAR'):
         kpt_bounds = np.concatenate(
             ([0.0, ], kpt_path[1:][np.isclose(xx, 0.0)], [kpt_path[-1], ]))
 
-    return kpt_path, bands, Efermi, kpt_bounds
+    return kpt_path, bands, Efermi, kpt_bounds, wkpts
 
 ############################################################
 
@@ -505,6 +505,21 @@ def command_line_arg():
                    default=None,
                    help='kpoint path, use ",", " ", ";" or "-" to separate the K-point if necessary.')
 
+    par.add_option('--hse',
+                   action='store_true', dest='isHSE',
+                   default=False,
+                   help='whether the calculation is HSE')
+
+    par.add_option('--skip_kpts',
+                   action='store', type="string", dest='skip_kpts',
+                   default=None,
+                   help='Skip the bands of the redundant k-points, usefull in HSE band plot.')
+
+    par.add_option('--nseg',
+                   action='store', type="int", dest='nseg',
+                   default=None,
+                   help='Number of kpoints in each segment, used with --skip_kpts.')
+
     par.add_option('-s', '--size', nargs=2,
                    action='store', type="float", dest='figsize',
                    default=(3.0, 4.0),
@@ -685,7 +700,35 @@ if __name__ == '__main__':
     else:
         whts = None
 
-    kpath, bands, efermi, kpt_bounds = get_bandInfo(opts.filename)
+    kpath, bands, efermi, kpt_bounds, wkpts = get_bandInfo(opts.filename)
+
+    # skip the redundant k-points, usefull for HSE band plot
+    # index starting from 1
+    if opts.isHSE:
+        kmask = np.logical_not(wkpts > 0)
+        kpath = kpath[kmask]
+        bands = bands[:,kmask,:]
+        if whts:
+            whts  = [w[:,kmask,...] for w in whts]
+
+        if opts.nseg is None:
+            raise ValueError("Please enter #kpoints in each kpath segment with '--nseg'.")
+        kpt_bounds = np.r_[kpath[::opts.nseg], kpath[-1]]
+
+    # skip the redundant k-points, usefull for HSE band plot
+    # index starting from 1
+    if opts.skip_kpts:
+        skpts = parseList(opts.skip_kpts)
+        kmask = [ii for ii in range(bands.shape[1]) if ii not in skpts]
+        kpath = kpath[kmask]
+        bands = bands[:,kmask,:]
+        if whts:
+            whts  = [w[:,kmask,...] for w in whts]
+
+        if opts.nseg is None:
+            raise ValueError("Please enter #kpoints in each kpath segment with '--nseg'.")
+        kpt_bounds = np.r_[kpath[::opts.nseg], kpath[-1]]
+
     if opts.efermi is None:
         bands -= efermi
     else:
