@@ -742,5 +742,9 @@ if __name__ == '__main__':
         saveDOSToFile(opts, xen, tdos, pdos)
 
     if not opts.quiet:
-        from subprocess import call
-        call(['feh', '-xdF', opts.dosimage])
+        try:
+            from subprocess import call
+            call(['feh', '-xdF', opts.dosimage])
+        except:
+            # do nothing if image view fails
+            pass

@@ -756,5 +756,9 @@ if __name__ == '__main__':
     saveband_dat(kpath, bands, opts, whts)
 
     if not opts.quiet:
-        from subprocess import call
-        call(['feh', '-xdF', opts.bandimage])
+        try:
+            from subprocess import call
+            call(['feh', '-xdF', opts.bandimage])
+        except:
+            # do nothing if image view fails
+            pass
