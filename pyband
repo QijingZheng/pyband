@@ -197,6 +197,9 @@ def get_bandInfo(inFile='OUTCAR'):
     vkpts = tmp[:, :3]
     wkpts = tmp[:, -1]
 
+    # in VASP 6.2, there is an extra line containing "Fermi energy: xxxx"
+    if 'Fermi energy' in outcar[LineEfermi]:
+        LineEfermi += 1
     # for ispin = 2, there are two extra lines "spin component..."
     N = (nband + 2) * nkpts * ispin + (ispin - 1) * 2
     bands = []
