@@ -362,7 +362,7 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
     for xx in opts.hlines:
         ax.axhline(y=xx, ls=':', color='k', lw=0.5, alpha=0.5)
     for yy in opts.vlines:
-        ax.axhline(x=yy, ls=':', color='k', lw=0.5, alpha=0.5)
+        ax.axvline(x=yy, ls=':', color='k', lw=0.5, alpha=0.5)
 
     ax.set_ylabel('Energy [eV]',  # fontsize='small',
                   labelpad=5)
