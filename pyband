@@ -523,8 +523,8 @@ def command_line_arg():
                    help='Skip the bands of the redundant k-points, usefull in HSE band plot.')
 
     par.add_option('--nseg',
-                   action='store', type="int", dest='nseg',
-                   default=None,
+                   action='append', type="int", dest='nseg',
+                   default=[],
                    help='Number of kpoints in each segment, used with --skip_kpts.')
 
     par.add_option('-s', '--size', nargs=2,
@@ -718,9 +718,15 @@ if __name__ == '__main__':
         if whts:
             whts  = [w[:,kmask,...] for w in whts]
 
-        if opts.nseg is None:
+        # if opts.nseg is None:
+        if len(opts.nseg) == 0:
             raise ValueError("Please enter #kpoints in each kpath segment with '--nseg'.")
-        kpt_bounds = np.r_[kpath[::opts.nseg], kpath[-1]]
+
+        if len(opts.nseg) == 1:
+            nn = opts.nseg[0]
+            kpt_bounds = np.r_[kpath[::nn], kpath[-1]]
+        else:
+            kpt_bounds = kpath[opts.nseg]
 
     # skip the redundant k-points, usefull for HSE band plot
     # index starting from 1
@@ -732,9 +738,15 @@ if __name__ == '__main__':
         if whts:
             whts  = [w[:,kmask,...] for w in whts]
 
-        if opts.nseg is None:
+        # if opts.nseg is None:
+        if len(opts.nseg) == 0:
             raise ValueError("Please enter #kpoints in each kpath segment with '--nseg'.")
-        kpt_bounds = np.r_[kpath[::opts.nseg], kpath[-1]]
+
+        if len(opts.nseg) == 1:
+            nn = opts.nseg[0]
+            kpt_bounds = np.r_[kpath[::nn], kpath[-1]]
+        else:
+            kpt_bounds = kpath[opts.nseg]
 
     if opts.efermi is None:
         bands -= efermi
