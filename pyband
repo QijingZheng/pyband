@@ -291,14 +291,24 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         s_m.set_array([EnergyWeight])
 
         for Ispin in range(nspin):
+
+            # If x and/or y are 2D arrays a separate data set will be drawn for
+            # every column. If both x and y are 2D, they must have the same
+            # shape. If only one of them is 2D with shape (N, m) the other must
+            # have length N and will be used for every data set m.
+
+            ax.plot(kpath, bands[Ispin],
+                    lw=LW + 2 * DELTA,
+                    color='gray', zorder=1)
+
             for jj in range(nbands):
                 x = kpath
                 y = bands[Ispin, :, jj]
                 z = EnergyWeight[Ispin, :, jj]
 
-                ax.plot(x, y,
-                        lw=LW + 2 * DELTA,
-                        color='gray', zorder=1)
+                # ax.plot(x, y,
+                #         lw=LW + 2 * DELTA,
+                #         color='gray', zorder=1)
 
                 points = np.array([x, y]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -339,21 +349,39 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
     else:
         for Ispin in range(nspin):
-            for Iband in range(nbands):
-                # if Iband == 0 else line.get_color()
-                lc = opts.linecolors[Ispin]
-                line, = ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
-                                alpha=0.8,
-                                color=lc,
-                                )
-                if whts is not None:
-                    for ii in range(len(opts.occ)):
-                        ax.scatter(kpath, bands[Ispin, :, Iband],
-                                   color=opts.occMarkerColor[ii],
-                                   s=whts[ii][Ispin, :, Iband] *
-                                   opts.occMarkerSize[ii],
-                                   marker=opts.occMarker[ii], zorder=1, lw=0.0,
-                                   alpha=0.5)
+            # If x and/or y are 2D arrays a separate data set will be drawn for
+            # every column. If both x and y are 2D, they must have the same
+            # shape. If only one of them is 2D with shape (N, m) the other must
+            # have length N and will be used for every data set m.
+            ax.plot(kpath, bands[Ispin],
+                    lw=opts.linewidth, color=opts.linecolors[Ispin],
+                    alpha=0.8, zorder=0)
+
+            if whts is not None:
+                kpath_x = np.tile(kpath, (nbands, 1)).T
+                for ii in range(len(opts.occ)):
+                    ax.scatter(kpath_x, bands[Ispin],
+                               color=opts.occMarkerColor[ii],
+                               s=whts[ii][Ispin] *
+                               opts.occMarkerSize[ii],
+                               marker=opts.occMarker[ii], zorder=1, lw=0.0,
+                               alpha=0.5)
+
+            # for Iband in range(nbands):
+            #     # if Iband == 0 else line.get_color()
+            #     lc = opts.linecolors[Ispin]
+            #     line, = ax.plot(kpath, bands[Ispin, :, Iband], lw=opts.linewidth, zorder=0,
+            #                     alpha=0.8,
+            #                     color=lc,
+            #                     )
+            #     if whts is not None:
+            #         for ii in range(len(opts.occ)):
+            #             ax.scatter(kpath, bands[Ispin, :, Iband],
+            #                        color=opts.occMarkerColor[ii],
+            #                        s=whts[ii][Ispin, :, Iband] *
+            #                        opts.occMarkerSize[ii],
+            #                        marker=opts.occMarker[ii], zorder=1, lw=0.0,
+            #                        alpha=0.5)
 
     for bd in kpt_bounds:
         ax.axvline(x=bd, ls='-', color='k', lw=0.5, alpha=0.5)
