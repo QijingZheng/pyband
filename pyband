@@ -5,9 +5,89 @@ import re
 import numpy as np
 from optparse import OptionParser
 
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch, Circle
+
 ############################################################
 __version__ = "1.0"
 ############################################################
+def TriangleGradFillBary(
+        ax,
+        vertices=[[0, 0], [np.sqrt(3)/2, 0.5], [np.sqrt(3)/2,-0.5]],
+        vertices_colors=[(1,0,0), (0,1,0), (0, 0, 1)],
+        vertices_labels=['A', 'B', 'C'],
+        nseg=50, ext=1.5,
+    ):
+    '''
+    Function to draw a triangle with gradient-filled colors based on barycentric coordinates
+
+    Parameters:
+    ax : Axes
+        The matplotlib axis where the triangle will be plotted.
+    vertices : list
+        Coordinates of the triangle vertices.
+    vertices_colors : list
+        RGB colors at each vertex.
+    vertices_labels : list
+        Labels for the vertices.
+    nseg : int
+        Segments for creating the gradient.
+    ext : float
+    '''
+    vertices        = np.asarray(vertices)
+    p0              = np.average(vertices, axis=0)
+    vertices_colors = np.asarray(vertices_colors)
+
+    A = vertices[0]; B = vertices[1]; C = vertices[2]
+    M = np.array([B-A, C-A])
+
+    # Direct coordinates using two edges of the triangle as basis
+    xd, yd = np.mgrid[0:1:1j*nseg, 0:1:1j*nseg]
+    # Cartesian coordinates
+    xc, yc = np.tensordot(M, [xd, yd], axes=(0,0))
+
+    # Barycentric coordinates
+    w = np.tensordot(([xc, yc]), np.linalg.inv(M), axes=(0,0))
+    w[w < 0] = 0; w[w > 1] = 1
+
+    w2 = w[...,0]; w3 = w[...,1]
+    w1 = 1.0 - w2 - w3
+    w1[w1 < 0] = 0; w1[w1 > 1] = 1
+
+    C0 = np.tensordot([w1, w2, w3], vertices_colors, axes=(0,0))
+
+    r0 = np.linalg.norm(vertices - p0, axis=1).max()
+    circle_patch = Circle(p0, r0, transform=ax.transData,
+            facecolor='none', edgecolor='gray', alpha=0.5, lw=1.0, clip_on=False)
+    ax.add_patch(circle_patch)
+
+    tri_path = PathPatch(Path(vertices), facecolor='none', lw=0)
+    ax.add_patch(tri_path)
+
+    img = ax.pcolormesh(xc, yc, C0,
+        clip_path=tri_path, clip_on=True
+    )
+    # img.set_clip_path(tri_path)
+
+    # ax.set_xlim(vertices[:,0].min(), vertices[:,0].max())
+    # ax.set_ylim(vertices[:,1].min(), vertices[:,1].max())
+    ax.set_xlim(p0[0] - r0, p0[0] + r0)
+    ax.set_ylim(p0[1] - r0, p0[1] + r0)
+
+    for ii in range(3):
+        x, y = ext*(vertices[ii] - p0) + p0
+
+        ax.text(x, y, vertices_labels[ii],
+                ha="center",
+                va="center",
+                fontsize='small',
+                # family='monospace',
+                # fontweight='bold'
+                transform=ax.transData,
+                bbox=dict(boxstyle='round', facecolor='w', alpha=1.0, pad=0,
+                    lw=0)
+        )
+
 
 def kpath_name_parse(KPATH_STR):
     '''
@@ -290,6 +370,23 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
         s_m = mpl.cm.ScalarMappable(cmap=opts.occLC_cmap, norm=norm)
         s_m.set_array([EnergyWeight])
 
+        if opts.tricolors:
+            if len(whts) == 2:
+                w1, w2 = whts
+                w3 = 1 - w1 - w2
+            else:
+                w0 = np.sum(whts, axis=0)
+                w0 = np.where(np.isclose(w0, 0), 1E-9, w0)
+                w1 = whts[0] / w0
+                w2 = whts[1] / w0
+                w3 = whts[2] / w0
+
+            assert np.alltrue((0 <= w1 ) & (w1 <= 1))
+            assert np.alltrue((0 <= w2 ) & (w2 <= 1))
+            assert np.alltrue((0 <= w3 ) & (w3 <= 1))
+
+            TriClrs = np.tensordot([w1, w2, w3], np.eye(3), axes=(0,0))
+
         for Ispin in range(nspin):
 
             # If x and/or y are 2D arrays a separate data set will be drawn for
@@ -312,40 +409,57 @@ def bandplot(kpath, bands, efermi, kpt_bounds, opts, whts=None):
 
                 points = np.array([x, y]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                if opts.tricolors:
+                    CC = TriClrs[Ispin,:,jj]
+                else:
+                    CC = [s_m.to_rgba(ww) for ww in (z[1:] + z[:-1])/2.]
                 lc = LineCollection(segments,
                                     # cmap=opts.occLC_cmap, # alpha=0.7,
-                                    colors=[s_m.to_rgba(ww)
-                                            for ww in (z[1:] + z[:-1])/2.]
+                                    colors=CC,
                                     # norm=plt.Normalize(0, 1)
                                     )
                 # lc.set_array((z[1:] + z[:-1]) / 2)
                 lc.set_linewidth(LW)
                 ax.add_collection(lc)
 
-        divider = make_axes_locatable(ax)
-        ax_cbar = divider.append_axes(opts.occLC_cbar_pos.lower(),
-                                      size=opts.occLC_cbar_size, pad=opts.occLC_cbar_pad)
+        if opts.tricolors:
+            ax_tri = ax.inset_axes(
+                [*opts.triAxesXY, opts.triAxesWidth, opts.triAxesWidth])
+            ax_tri.set_aspect('equal')
+            for key, spine in ax_tri.spines.items():
+                spine.set_visible(False) 
 
-        if opts.occLC_cbar_pos.lower() == 'top' or opts.occLC_cbar_pos.lower() == 'bottom':
-            ori = 'horizontal'
+            ax_tri.set_xticks([])
+            ax_tri.set_yticks([])
+
+            TriangleGradFillBary(ax_tri,
+                vertices_labels=opts.triAxesLabels,
+                ext=opts.triAxesLabExt
+            )
         else:
-            ori = 'vertical'
-        cbar = plt.colorbar(s_m, cax=ax_cbar,
-                            # ticks=[0.0, 1.0],
-                            orientation=ori)
-        if opts.occLC_cbar_ticks:
-            cbar.set_ticks([
-                float(x) for x in
-                opts.occLC_cbar_ticks.split()
-            ])
-            if opts.occLC_cbar_ticklabels:
-                cbar.set_ticklabels(opts.occLC_cbar_ticklabels.split())
+            divider = make_axes_locatable(ax)
+            ax_cbar = divider.append_axes(opts.occLC_cbar_pos.lower(),
+                                          size=opts.occLC_cbar_size, pad=opts.occLC_cbar_pad)
 
-        if ori == 'horizontal':
-            cbar.ax.xaxis.set_ticks_position('top')
-        else:
-            cbar.ax.yaxis.set_ticks_position('right')
+            if opts.occLC_cbar_pos.lower() == 'top' or opts.occLC_cbar_pos.lower() == 'bottom':
+                ori = 'horizontal'
+            else:
+                ori = 'vertical'
+            cbar = plt.colorbar(s_m, cax=ax_cbar,
+                                # ticks=[0.0, 1.0],
+                                orientation=ori)
+            if opts.occLC_cbar_ticks:
+                cbar.set_ticks([
+                    float(x) for x in
+                    opts.occLC_cbar_ticks.split()
+                ])
+                if opts.occLC_cbar_ticklabels:
+                    cbar.set_ticklabels(opts.occLC_cbar_ticklabels.split())
 
+            if ori == 'horizontal':
+                cbar.ax.xaxis.set_ticks_position('top')
+            else:
+                cbar.ax.yaxis.set_ticks_position('right')
 
     else:
         for Ispin in range(nspin):
@@ -682,6 +796,30 @@ def command_line_arg():
                    action='store_true', dest='quiet',
                    help='not show the resulting image')
 
+    par.add_option('-t', '--tricolors',
+                   action='store_true', dest='tricolors',
+                   help='Use three colors to show contributions')
+
+    par.add_option('--triAxesXY', nargs=2,
+                   action='store', type="float", dest='triAxesXY',
+                   default=(0.9, 0.9),
+                   help='Axes position for the inset triangle')
+
+    par.add_option('--triAxesWidth', nargs=1,
+                   action='store', type="float", dest='triAxesWidth',
+                   default=0.20,
+                   help='The axes width for the inset triangle')
+
+    par.add_option('--triAxesLabels', nargs=3,
+                   action='store', type="str", dest='triAxesLabels',
+                   default=['A', 'B', 'C'],
+                   help='The label for the three vertices')
+
+    par.add_option('--triAxesLabExt', nargs=1,
+                   action='store', type="float", dest='triAxesLabExt',
+                   default=1.3,
+                   help='')
+
     return par.parse_args()
 
 
@@ -690,7 +828,6 @@ if __name__ == '__main__':
     opts, args = command_line_arg()
 
     if opts.occ:
-
         Nocc  = len(opts.occ)
         occM  = ['o' for ii in range(Nocc)]
         occMc = ['r' for ii in range(Nocc)]
@@ -734,6 +871,9 @@ if __name__ == '__main__':
 
     else:
         whts = None
+
+    if opts.tricolors:
+        assert 3>= len(whts) >= 2, "To use triple colors, 2 to 3 group of atoms are needed!"
 
     kpath, bands, efermi, kpt_bounds, wkpts = get_bandInfo(opts.filename)
 

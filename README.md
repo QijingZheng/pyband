@@ -57,6 +57,12 @@ to the KS states.  This can also be represented using a colormap:
 
 ![band_with_atom_weight_cmap](examples/band_with_atoms_weight_cmap.png)
 
+If one wants to show contributions from three group of atoms:
+
+```$ pyband --occ '1 2' --occ '3 4 5 6' --occL -t --triAxesLabels  Mo S Se -k mgkm```
+
+![band_with_triple_contributions](examples/band_tricolors.png)
+
 The spd-projected weight can also be specefied:
 
 ```$ pyband --occ '1 3 4' --spd '4 5 6 7 8' ```
