@@ -49,13 +49,15 @@ def TriangleGradFillBary(
 
     # Barycentric coordinates
     w = np.tensordot(([xc, yc]), np.linalg.inv(M), axes=(0,0))
-    w[w < 0] = 0; w[w > 1] = 1
+    # w[w < 0] = 0; w[w > 1] = 1
 
     w2 = w[...,0]; w3 = w[...,1]
     w1 = 1.0 - w2 - w3
-    w1[w1 < 0] = 0; w1[w1 > 1] = 1
+    # w1[w1 < 0] = 0; w1[w1 > 1] = 1
 
     C0 = np.tensordot([w1, w2, w3], vertices_colors, axes=(0,0))
+    C0[C0 > 1] = 1
+    C0[C0 < 0] = 0
 
     r0 = np.linalg.norm(vertices - p0, axis=1).max()
     circle_patch = Circle(p0, r0, transform=ax.transData,
